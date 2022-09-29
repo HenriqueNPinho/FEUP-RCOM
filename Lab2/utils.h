@@ -1,3 +1,11 @@
+#include "alarm.c"
+#include <unistd.h>
+#include <signal.h>
+#include <stdio.h>
+
+#define FALSE 0
+#define TRUE 1
+
 #define TRANSMITTER 1 
 #define RECEIVER 0
 
