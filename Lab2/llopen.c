@@ -3,6 +3,7 @@
 int alarmEnabled = FALSE;
 int alarmCount = 0;
 
+
 // Alarm function handler
 void alarmHandler(int signal)
 {
@@ -32,10 +33,71 @@ void disableAlarm(){
   alarm(0);
 }
 
+int ControlByteCheck(unsigned char b){
+    return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA;
+}
+void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb){
+    switch (*currState)
+    {
+    case START:
+        if(b==FLAG)
+            *currState=FLG_RCV;
+        break;
+
+    case FLG_RCV:
+        if(b==ADDRESS_FIELD)
+            *currState=A_RCV;
+        else if(b!=FLAG)
+            *currState=START;
+        break;
+
+    case A_RCV:
+        if(ControlByteCheck(b)){
+            *currState=C_RCV;
+            *controlb=b; //para fazer ou exclusivo
+        }
+        else if(b==FLAG){
+            *currState=FLG_RCV;
+        }
+        else{
+            *currState=START;
+        }
+        break;
+    
+    case C_RCV:
+        if(b== (ADDRESS_FIELD ^(*controlb))){
+            *currState=BCC_OK;
+        }
+         else if(b==FLAG){
+            *currState=FLG_RCV;
+        }
+        else{
+            *currState=START;
+        }
+        break;
+    case BCC_OK:
+        if(b==FLAG){
+            *currState=STOP;
+        }
+        else{
+            *currState=START;
+        }
+    break;
+    case STOP:
+        break;
+    default:
+        break;
+    }
+}
 void readReceiverResponse(int fd){
     unsigned char b, controlb;
-    //primeiro estado
-    while(//estado  )
+    enum state state=START;
+    while(state!=STOP){
+        if(read(fd,&b, 1)<0){
+            perror("error reading receiver response\n");
+        }
+        SMresponse(&state, b, &controlb);
+    }
 
 }
 void llopen(int fd, int flag){
@@ -52,6 +114,8 @@ void llopen(int fd, int flag){
             printf("Send SET\n");
             startAlarm();
             //read
+            printf("UA received\n");
+           
             
         }
         while (/* <maxtries */);

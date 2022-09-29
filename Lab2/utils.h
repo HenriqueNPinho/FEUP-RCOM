@@ -1,4 +1,3 @@
-#include "alarm.c"
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
@@ -13,3 +12,5 @@
 #define ADDRESS_FIELD 0x03
 #define CONTROL_BYTE_SET 0x03
 #define CONTROL_BYTE_UA 0X07
+
+enum state{START, FLG_RCV, A_RCV, C_RCV, BCC_OK,STOP};
