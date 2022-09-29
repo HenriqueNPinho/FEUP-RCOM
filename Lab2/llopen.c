@@ -11,8 +11,33 @@ void alarmHandler(int signal)
 
     printf("Alarm #%d\n", alarmCount);
 }
+void startAlarm(){
+    (void)signal(SIGALRM, alarmHandler);
 
+    while (alarmCount < 4)
+    {
+        if (alarmEnabled == FALSE)
+        {
+            alarm(3); // Set alarm to be triggered in 3s
+            alarmEnabled = TRUE;
+        }
+    }
 
+}
+void disableAlarm(){
+    struct sigaction sa;
+	sa.sa_handler = NULL;
+    sigaction(SIGALRM, &sa, NULL);
+
+  alarm(0);
+}
+
+void readReceiverResponse(int fd){
+    unsigned char b, controlb;
+    //primeiro estado
+    while(//estado  )
+
+}
 void llopen(int fd, int flag){
     if(flag==TRANSMITTER){
         unsigned char  ctrlFrame[5];
@@ -25,14 +50,15 @@ void llopen(int fd, int flag){
         do{
             write(fd, ctrlFrame, 5);
             printf("Send SET\n");
-            alarmCount=0;
-            (void)signal(SIGALRM, alarmHandler);
+            startAlarm();
+            //read
             
         }
-        while (/* condition */)
-        {
-            /* code */
-        }
+        while (/* <maxtries */);
+        disableAlarm();
+        
+        //if maxtries
+            //print max tries exceeded
         
     }
     else if(flag==RECEIVER){
