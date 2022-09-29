@@ -93,18 +93,6 @@ int main(int argc, char *argv[])
     int i = 0;
     while (STOP == FALSE)
     {
-        /*
-        // Returns after 5 chars have been input
-        int bytes = read(fd, buf, 1);
-        //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
-
-        printf(":%s:%d\n", buf, bytes);
-        
-        if (bytes > 0) {
-            if (        
-        }
-            STOP = TRUE;
-            */
             
         int res = read(fd, buf+i, 1);
         if(res>0){
