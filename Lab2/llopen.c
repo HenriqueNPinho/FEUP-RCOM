@@ -113,17 +113,18 @@ void llopen(int fd, int flag){
             write(fd, ctrlFrame, 5);
             printf("Send SET\n");
             startAlarm();
-            //read
+            readReceiverResponse(fd);
             printf("UA received\n");
            
             
         }
-        while (/* <maxtries */);
+        while (alarmCount<MAX_TRIES);
         disableAlarm();
         
-        //if maxtries
-            //print max tries exceeded
-        
+        if(alarmCount>MAX_TRIES){
+            printf("max tries exceeded\n");
+            exit(-1);
+        }
     }
     else if(flag==RECEIVER){
 
