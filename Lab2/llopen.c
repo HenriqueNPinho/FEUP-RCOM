@@ -90,6 +90,7 @@ void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb)
     }
 }
 void readReceiverResponse(int fd){
+    print("cona\n");
     unsigned char b, controlb;
     enum state state=START;
     while(state!=STOP){
@@ -128,8 +129,6 @@ void llopen(int fd, int flag){
             startAlarm();
             readReceiverResponse(fd);
             printf("UA received\n");
-           
-            
         }
         while (alarmCount<MAX_TRIES);
         disableAlarm();

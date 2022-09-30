@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
+#include "llopen.c"
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -21,7 +22,6 @@
 
 #define BUF_SIZE 256
 
-volatile int STOP = FALSE;
 
 int main(int argc, char *argv[])
 {
@@ -89,23 +89,7 @@ int main(int argc, char *argv[])
     printf("New termios structure set\n");
 
     // Loop for input
-    unsigned char buf[BUF_SIZE + 1]; // +1: Save space for the final '\0' char
-    int i = 0;
-    while (STOP == FALSE)
-    {
-            
-        int res = read(fd, buf+i, 1);
-        if(res>0){
-            if (buf[i] == '\0') {
-                STOP = TRUE;
-
-                }
-            i++;
-            }
-        printf(":%s:%d\n", buf, res);
-    }
-    
-    printf("%s\n", buf);
+    llopen(fd,0); //receiver
 
     // The while() cycle should be changed in order to respect the specifications
     // of the protocol indicated in the Lab guide
