@@ -1,25 +1,27 @@
 #include "utils.h"
 
-int alarmEnabled = FALSE;
+int alarmFlag; 
 int alarmCount = 0;
 
 
 // Alarm function handler
 void alarmHandler(int signal)
 {
-    alarmEnabled = FALSE;
+    alarmFlag = 1;
     alarmCount++;
     printf("Alarm #%d\n", alarmCount);
 }
 void startAlarm(){
+    
     struct sigaction sa;
 	sa.sa_handler = &alarmHandler;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
-
+    alarmFlag=0;
 	sigaction(SIGALRM, &sa, NULL);
 
-  alarm(3); 
+    alarm(3); 
+ 
 
 }
 void disableAlarm(){
@@ -27,7 +29,7 @@ void disableAlarm(){
     sa.sa_handler = NULL;
 
     sigaction(SIGALRM, &sa, NULL);
-
+    alarmFlag=0;
   alarm(0);
 }
 
@@ -87,13 +89,14 @@ void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb)
         break;
     }
 }
+
 void readReceiverResponse(int fd){
     unsigned char b, controlb;
     enum state state=START;
-    while(state!=STOP){
+    while(state!=STOP && alarmFlag==0){
         if(read(fd,&b, 1)<0){
-            perror("error reading receiver response\n");
-        }
+            printf("error reading receiver response\n");
+        }    
         SMresponse(&state, b, &controlb);
     }
 
@@ -123,11 +126,13 @@ void llopen(int fd, int flag){
         do{
             write(fd, ctrlFrame, 5);
             printf("SET Sent\n");
+            alarmFlag= 0;
             startAlarm();        
             readReceiverResponse(fd);
-            printf("UA received\n");
+            if(!alarmFlag)
+                printf("UA received\n");
         }
-        while (alarmCount<MAX_TRIES);
+        while (alarmCount<MAX_TRIES && alarmFlag);
         disableAlarm();
         
         if(alarmCount>MAX_TRIES){
