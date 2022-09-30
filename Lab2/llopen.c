@@ -100,6 +100,19 @@ void readReceiverResponse(int fd){
     }
 
 }
+
+void readTransmiterResponse(int fd){
+    unsigned char b, controlb;
+    enum state state=START;
+    while(state!=STOP){
+        if(read(fd,&b, 1)<0){
+            perror("error reading transmiter response\n");
+        }
+        SMresponse(&state, b, &controlb);
+    }
+
+}
+
 void llopen(int fd, int flag){
     if(flag==TRANSMITTER){
         unsigned char  ctrlFrame[5];
@@ -127,6 +140,28 @@ void llopen(int fd, int flag){
         }
     }
     else if(flag==RECEIVER){
+        unsigned char  ctrlFrame[5];
+        ctrlFrame[0]=FLAG;
+        ctrlFrame[1]=ADDRESS_FIELD;
+        ctrlFrame[2]=CONTROL_BYTE_UA;
+        ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
+        ctrlFrame[4]=FLAG;
+
+        do{
+            write(fd, ctrlFrame, 5);
+            printf("Send UA\n");
+            startAlarm();
+            readTransmiterResponse(fd);
+            //printf("SET received\n");
+           
+        }
+        while (alarmCount<MAX_TRIES);
+        disableAlarm();
+
+        if(alarmCount>MAX_TRIES){
+            printf("max tries exceeded\n");
+            exit(-1);
+        }
 
     }
     else{
