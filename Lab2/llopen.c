@@ -124,7 +124,7 @@ void llopen(int fd, int flag){
 
         do{
             write(fd, ctrlFrame, 5);
-            printf("Send SET\n");
+            printf("SET Sent\n");
             startAlarm();
             readReceiverResponse(fd);
             printf("UA received\n");
@@ -140,28 +140,17 @@ void llopen(int fd, int flag){
         }
     }
     else if(flag==RECEIVER){
+        readTransmiterResponse(fd);
+        printf("SET received\n");
+        
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
         ctrlFrame[1]=ADDRESS_FIELD;
         ctrlFrame[2]=CONTROL_BYTE_UA;
         ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
         ctrlFrame[4]=FLAG;
-
-        do{
-            write(fd, ctrlFrame, 5);
-            printf("Send UA\n");
-            startAlarm();
-            readTransmiterResponse(fd);
-            //printf("SET received\n");
-           
-        }
-        while (alarmCount<MAX_TRIES);
-        disableAlarm();
-
-        if(alarmCount>MAX_TRIES){
-            printf("max tries exceeded\n");
-            exit(-1);
-        }
+        write(fd, ctrlFrame, 5);
+        printf("UA Sent\n");
 
     }
     else{
