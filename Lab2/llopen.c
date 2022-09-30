@@ -9,25 +9,23 @@ void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
     alarmCount++;
-
     printf("Alarm #%d\n", alarmCount);
 }
 void startAlarm(){
-    (void)signal(SIGALRM, alarmHandler);
+    struct sigaction sa;
+	sa.sa_handler = &alarmHandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
 
-    while (alarmCount < 4)
-    {
-        if (alarmEnabled == FALSE)
-        {
-            alarm(3); // Set alarm to be triggered in 3s
-            alarmEnabled = TRUE;
-        }
-    }
+	sigaction(SIGALRM, &sa, NULL);
+
+  alarm(3); 
 
 }
 void disableAlarm(){
     struct sigaction sa;
-	sa.sa_handler = NULL;
+    sa.sa_handler = NULL;
+
     sigaction(SIGALRM, &sa, NULL);
 
   alarm(0);
@@ -90,7 +88,6 @@ void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb)
     }
 }
 void readReceiverResponse(int fd){
-    print("cona\n");
     unsigned char b, controlb;
     enum state state=START;
     while(state!=STOP){
@@ -126,7 +123,7 @@ void llopen(int fd, int flag){
         do{
             write(fd, ctrlFrame, 5);
             printf("SET Sent\n");
-            startAlarm();
+            startAlarm();        
             readReceiverResponse(fd);
             printf("UA received\n");
         }
