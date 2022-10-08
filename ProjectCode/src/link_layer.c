@@ -2,10 +2,9 @@
 
 #include "../include/link_layer.h"
 
-
-
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
+struct termios oldtio;
 
 int alarmFlag; 
 int alarmCount = 0;
@@ -43,7 +42,7 @@ void disableAlarm(){
 // LLOPEN
 ////////////////////////////////////////////////
 
-/*
+
 int ControlByteCheck(unsigned char b){
     return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA;
 }
@@ -51,6 +50,7 @@ void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb)
     switch (*currState)
     {
     case START:
+  
         if(b==FLAG)
             *currState=FLG_RCV;
         break;
@@ -114,20 +114,24 @@ void readReceiverResponse(int fd){
 }
 
 void readTransmiterResponse(int fd){
+
     unsigned char b, controlb;
     enum state state=START;
+       
     while(state!=STOP){
+      
         if(read(fd,&b, 1)<0){
             perror("error reading transmiter response\n");
         }
+         
         SMresponse(&state, b, &controlb);
     }
 
 }
-*/
-int llopen(LinkLayer connectionParameters)
+
+int llopen(int fd, LinkLayer connectionParameters)
 {
-    /*   if(connectionParameters.role==TRANSMITTER){
+       if(connectionParameters.role==TRANSMITTER){
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
         ctrlFrame[1]=ADDRESS_FIELD;
@@ -136,11 +140,11 @@ int llopen(LinkLayer connectionParameters)
         ctrlFrame[4]=FLAG;
 
         do{
-            write(connectionParameters.serialPort, ctrlFrame, 5);
+            write(fd, ctrlFrame, 5);
             printf("SET Sent\n");
             alarmFlag= 0;
             startAlarm();        
-            //readReceiverResponse(fd);
+            readReceiverResponse(fd);
             if(!alarmFlag)
                 printf("UA received\n");
         }
@@ -153,7 +157,7 @@ int llopen(LinkLayer connectionParameters)
         }
     }
     else if(connectionParameters.role==RECEIVER){
-        //readTransmiterResponse(fd);
+        readTransmiterResponse(fd);
         printf("SET received\n");
         
         unsigned char  ctrlFrame[5];
@@ -162,14 +166,14 @@ int llopen(LinkLayer connectionParameters)
         ctrlFrame[2]=CONTROL_BYTE_UA;
         ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
         ctrlFrame[4]=FLAG;
-        //write(fd, ctrlFrame, 5);
+        write(fd, ctrlFrame, 5);
         printf("UA Sent\n");
 
     }
     else{
     printf("Unknown flag\n");
     exit(1);
-    } */
+    } 
     return 1;
 }
 
@@ -204,9 +208,6 @@ int llclose(int showStatistics)
 }
 
 
-/*int openSerialPort(const char* serialPort) {
-    return open(serialPort, O_RDWR | O_NOCTTY);
-}*/
 
 LinkLayer createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
 //    LinkLayer ll = malloc(sizeof(LinkLayer));
@@ -218,4 +219,39 @@ LinkLayer createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRa
     ll.timeout = timeout;
 
     return ll;
+}
+
+int openSerialPort(const char* port, int baudRate)
+{
+  struct termios newtio;
+  int fd;
+
+   fd=open(port,O_RDWR | O_NOCTTY);
+    if (fd <0) {perror(port); exit(-1);}
+
+    if (tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
+        perror("tcgetattr");
+        exit(-1);
+    }
+
+    bzero(&newtio, sizeof(newtio));
+    newtio.c_cflag = baudRate | CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+
+    /* set input mode (non-canonical, no echo,...) */
+    newtio.c_lflag = 0;
+
+    newtio.c_cc[VTIME]    = 10;   /* inter-character timer unused */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
+
+    tcflush(fd, TCIOFLUSH);
+
+    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+      perror("tcsetattr");
+      exit(-1);
+    }
+     printf("New termios structure set with baudRate: in:%d | out:%d\n", newtio.c_ispeed, newtio.c_ospeed);
+
+    return fd;
 }

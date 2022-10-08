@@ -7,14 +7,7 @@
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
-    int fd = open(serialPort, O_RDWR | O_NOCTTY);
-    if (fd<0) {
-        printf("Error opening Serial Port");
-        exit(EXIT_FAILURE);
-    }
-    else{
-        printf("FD PORT: %d\n", fd);
-    }
+    int fd = openSerialPort(serialPort, baudRate);
 
     LinkLayerRole llrole;
 
@@ -23,22 +16,22 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     } else if (strcmp(role, "rx")==0) {
         llrole = LlRx;
     } else {
-        printf("ERROR: Unknown role");
+        printf("ERROR: Unknown role\n");
         exit(EXIT_FAILURE);
     }
 
     LinkLayer ll = createLinkLayer(serialPort, llrole, baudRate, nTries, timeout);
 
-    //llopen(ll);
+    llopen(fd, ll);
 
     switch (ll.role)
     {
     case LlTx:
-        printf("testar LLTX");
+        printf("testar LLTX\n");
         //sendfile();
         break;
     case LlRx:
-        printf("testar LLRX");
+        printf("testar LLRX\n");
         //receivefile();
         break;
     default:
