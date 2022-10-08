@@ -1,10 +1,7 @@
 // Main file of the serial port project.
 // NOTE: This file must not be changed.
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "application_layer.h"
+#include "./include/application_layer.h"
 
 #define BAUDRATE 9600
 #define N_TRIES 3
