@@ -211,9 +211,9 @@ int llclose(int showStatistics)
 }
 
 
-int openSerialPort(const char* serialPort) {
+/*int openSerialPort(const char* serialPort) {
     return open(serialPort, O_RDWR | O_NOCTTY);
-}
+}*/
 
 LinkLayer createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
 //    LinkLayer ll = malloc(sizeof(LinkLayer));

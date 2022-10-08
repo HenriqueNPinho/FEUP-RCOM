@@ -3,13 +3,18 @@
 #include "../include/application_layer.h"
 
 
-#include <stdlib.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
-    int fd = openSerialPort(serialPort);
+    int fd = open(serialPort, O_RDWR | O_NOCTTY);
     if (fd<0) {
         printf("Error opening Serial Port");
         exit(EXIT_FAILURE);
