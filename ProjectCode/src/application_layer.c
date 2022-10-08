@@ -4,11 +4,10 @@
 
 
 
-
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
-    int fd = openSerialPort(serialPort);
+    int fd = open(serialPort, O_RDWR | O_NOCTTY);
     if (fd<0) {
         printf("Error opening Serial Port");
         exit(EXIT_FAILURE);
