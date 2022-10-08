@@ -3,13 +3,6 @@
 #include "../include/link_layer.h"
 
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
