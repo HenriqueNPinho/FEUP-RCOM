@@ -5,8 +5,8 @@
 #define FALSE 0
 #define TRUE 1
 
-#define TRANSMITTER 1 
-#define RECEIVER 0
+#define TRANSMITTER 0 
+#define RECEIVER 1
 
 #define FLAG 0x7E
 #define ADDRESS_FIELD 0x03

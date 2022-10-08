@@ -1,7 +1,7 @@
 // Application layer protocol implementation
 
-#include "application_layer.h"
-#include "link_layer.h"
+#include "../include/application_layer.h"
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,6 +13,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     if (fd<0) {
         printf("Error opening Serial Port");
         exit(EXIT_FAILURE);
+    }
+    else{
+        printf("FD PORT: %d\n", fd);
     }
 
     LinkLayerRole llrole;
@@ -28,13 +31,17 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     LinkLayer ll = createLinkLayer(serialPort, llrole, baudRate, nTries, timeout);
 
+    //llopen(ll);
+
     switch (ll.role)
     {
     case LlTx:
         printf("testar LLTX");
+        //sendfile();
         break;
     case LlRx:
         printf("testar LLRX");
+        //receivefile();
         break;
     default:
         break;

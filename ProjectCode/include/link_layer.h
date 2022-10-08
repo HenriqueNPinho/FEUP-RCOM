@@ -3,6 +3,7 @@
 
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
+#include "utils.h"
 
 typedef enum
 {
@@ -26,6 +27,7 @@ typedef struct
 // MISC
 #define FALSE 0
 #define TRUE 1
+
 
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return "1" on success or "-1" on error.
