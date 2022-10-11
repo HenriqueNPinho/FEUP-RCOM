@@ -9,7 +9,6 @@ struct termios oldtio;
 int alarmFlag; 
 int alarmCount = 0;
 
-
 // Alarm function handler
 void alarmHandler(int signal)
 {
@@ -38,6 +37,8 @@ void disableAlarm(){
     alarmFlag=0;
   alarm(0);
 }
+
+
 ////////////////////////////////////////////////
 // LLOPEN
 ////////////////////////////////////////////////
@@ -209,17 +210,7 @@ int llclose(int showStatistics)
 
 
 
-LinkLayer createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
-//    LinkLayer ll = malloc(sizeof(LinkLayer));
-    LinkLayer ll;
-    strcpy(ll.serialPort,serialPort);
-    ll.role = role;
-    ll.baudRate = baudRate;
-    ll.nRetransmissions = nRetransmissions;
-    ll.timeout = timeout;
 
-    return ll;
-}
 
 int openSerialPort(const char* port, int baudRate)
 {

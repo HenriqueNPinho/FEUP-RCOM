@@ -3,13 +3,49 @@
 #include "../include/application_layer.h"
 
 
+LinkLayerRole llrole;
+LinkLayer ll; //l27
+ContronPacketInformation packetInfo;
+
+
+void createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
+//    LinkLayer ll = malloc(sizeof(LinkLayer));
+   
+    strcpy(ll.serialPort,serialPort);
+    ll.role = role;
+    ll.baudRate = baudRate;
+    ll.nRetransmissions = nRetransmissions;
+    ll.timeout = timeout;
+
+}
+int readFileInformation(char* fileName){
+
+    int fd;
+    struct stat status;
+
+    if((fd = open(fileName,O_RDONLY)) < 0){
+        perror("Error opening file!\n");
+        return -1;
+    }
+
+    if(stat(fileName,&status) < 0){
+        perror("Error reading file information!\n");
+        return -1;
+    }
+
+    packetInfo.fileName = fileName;
+    packetInfo.fileSize = status.st_size;
+
+    return 0;
+}
+
+
+
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
     int fd = openSerialPort(serialPort, baudRate);
-
-    LinkLayerRole llrole;
 
     if (strcmp(role, "tx")==0) {
         llrole = LlTx;
@@ -22,7 +58,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         exit(EXIT_FAILURE);
     }
 
-    LinkLayer ll = createLinkLayer(serialPort, llrole, baudRate, nTries, timeout);
+    createLinkLayer(serialPort, llrole, baudRate, nTries, timeout);
 
     llopen(fd, ll);
 
@@ -45,7 +81,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 }
 
 
-int readControlPacket(unsigned char b, unsigned char* packet){
+int readControlPacket(unsigned char b, unsigned char* packet, const char* filename){
     int packetIndex = 1;
     int fileNameSize = 0;
     int fileSize = 0;
@@ -71,22 +107,19 @@ int readControlPacket(unsigned char b, unsigned char* packet){
             
         }
 
-        /*if(packet[packetIndex] == FILE_SIZE_FLAG){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho
+        if(packet[packetIndex] == FILE_SIZE_FLAG){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho -> otimizaçao 400>>8 = 15
 
             packetIndex+=2;
             fileSize += packet[packetIndex] << 24;
             packetIndex++;
             fileSize += packet[packetIndex] << 16;
             packetIndex++;
-            fileSize += packet[packetIndex] << 8;
+            fileSize += packet[packetIndex] << 8; 
             packetIndex++;
             fileSize += packet[packetIndex];
         
-        }*/
+        }
 
-        //TO DO 
-        //Guardar o nome do ficheiro e o tamanho para comparar no fim se bate certo... mas onde para conseguir aceder mais tarde??
-        //Como sou o receiver tenho de abrir um sitio novo para meter o ficheio, mas onde meto essa info para os data packets?
 
     } else if (b== CONTROL_BYTE_END) {
 
@@ -107,7 +140,7 @@ int readControlPacket(unsigned char b, unsigned char* packet){
 
         }
 
-        /*if(packet[packetIndex] == FILE_SIZE_FLAG){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho
+        if(packet[packetIndex] == FILE_SIZE_FLAG){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho
             packetIndex+=2;
             fileSize += packet[packetIndex] << 24;
             packetIndex++;
@@ -117,10 +150,7 @@ int readControlPacket(unsigned char b, unsigned char* packet){
             packetIndex++;
             fileSize += packet[packetIndex];
             
-        }*/
-
-        //TO DO
-        //Comparar se o tamnaho e nome do fichiero sao iguais quando se iniciou
+        }
 
     }
     
@@ -136,7 +166,7 @@ int receivefile(int fd, const char* filename) {
         //llread() para o buffer
         //no llread como é que lemos a partir da porta? nao da para a passar
         if (buffer[0] == CONTROL_BYTE_START) {
-            //readControlPacket(CONTROL_BYTE_START, buffer);
+            //readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }
 
         if (buffer[0] == CONTROL_BYTE_DATA) {
@@ -144,7 +174,7 @@ int receivefile(int fd, const char* filename) {
         }
 
         if (buffer[0] == CONTROL_BYTE_END) {
-            //readControlPacket(CONTROL_BYTE_END, buffer);
+            //readControlPacket(CONTROL_BYTE_END, buffer, filename);
             done = 1;
         }
     }
