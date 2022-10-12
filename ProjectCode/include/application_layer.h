@@ -5,6 +5,10 @@
 #define _APPLICATION_LAYER_H_
 #include "../include/link_layer.h"
 
+
+void createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout);
+int readFileInformation(const char* fileName);
+int sendFile(const char* filename);
 // Application layer main function.
 // Arguments:
 //   serialPort: Serial port name (e.g., /dev/ttyS0).
@@ -15,5 +19,9 @@
 //   filename: Name of the file to send / receive.
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
+
+                      
+int readControlPacket(unsigned char b, unsigned char* packet, const char* filename);
+int receiveFile(int fd, const char* filename);
 
 #endif // _APPLICATION_LAYER_H_

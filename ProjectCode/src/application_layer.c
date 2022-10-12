@@ -5,7 +5,7 @@
 
 LinkLayerRole llrole;
 LinkLayer ll; //l27
-ContronPacketInformation packetInfo;
+ControlPacketInformation packetInfo;
 
 
 void createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
@@ -18,7 +18,8 @@ void createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, i
     ll.timeout = timeout;
 
 }
-int readFileInformation(char* fileName){
+
+int readFileInformation(const char* fileName){
 
     int fd;
     struct stat status;
@@ -40,6 +41,37 @@ int readFileInformation(char* fileName){
 }
 
 
+int sendControlPacket(unsigned char controlByte){
+    // flag start - flag nome - tamanho nome- nome - flag size- tamanho size- size - 
+    unsigned char packet(5 + sizeof(packetInfo.fileName)+  sizeof(packetInfo.fileSize));
+    int pIndex=0;
+
+    packet[pIndex]=controlByte;
+    pIndex++;
+
+
+    packet[pIndex]=FILE_NAME_BYTE;
+    pIndex++;
+
+    
+    packet[pIndex]= sizeof(packetInfo.fileName);
+    pIndex++;
+
+    for(int i = 0; i< sizeof(packetInfo.fileName);i++){
+        packet[pIndex]= packetInfo.fileName[i];
+        pIndex++;
+    }
+}
+int sendFile(const char* filename){
+    if(readFileInformation(filename)<0){
+        printf("Could not read file information\n");
+        return -1;
+    }
+    /*if(sendControlPacket(flag start)<0)  //start flag
+     if()   //send file
+    if()     //end flag
+    */
+}
 
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
@@ -66,10 +98,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     {
     case LlTx:
         printf("testar LLTX\n");
-        //sendfile();
+        sendFile(filename);
         break;
     case LlRx:
-        if (receivefile(fd,filename) != 0) {
+        if (receiveFile(fd,filename) != 0) {
             printf("ERROR RECEIVING FILE... :(\n");
             exit(EXIT_FAILURE);
         }
@@ -81,14 +113,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 }
 
 
-int readControlPacket(unsigned char b, unsigned char* packet, const char* filename){
+int readControlPacket(unsigned char controlByte, unsigned char* packet, const char* filename){
     int packetIndex = 1;
     int fileNameSize = 0;
     int fileSize = 0;
     char* fileName;
 
 
-    if (b == CONTROL_BYTE_START) {
+    if (controlByte == CONTROL_BYTE_START) {
 
         if (packet[packetIndex] == FILE_NAME_BYTE) {
 
@@ -107,7 +139,7 @@ int readControlPacket(unsigned char b, unsigned char* packet, const char* filena
             
         }
 
-        if(packet[packetIndex] == FILE_SIZE_FLAG){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho -> otimizaçao 400>>8 = 15
+        if(packet[packetIndex] == FILE_SIZE_BYTE){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho -> otimizaçao 400>>8 = 15
 
             packetIndex+=2;
             fileSize += packet[packetIndex] << 24;
@@ -121,7 +153,7 @@ int readControlPacket(unsigned char b, unsigned char* packet, const char* filena
         }
 
 
-    } else if (b== CONTROL_BYTE_END) {
+    } else if (controlByte== CONTROL_BYTE_END) {
 
         if (packet[packetIndex] == FILE_NAME_BYTE) {
 
@@ -140,7 +172,7 @@ int readControlPacket(unsigned char b, unsigned char* packet, const char* filena
 
         }
 
-        if(packet[packetIndex] == FILE_SIZE_FLAG){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho
+        if(packet[packetIndex] == FILE_SIZE_BYTE){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho
             packetIndex+=2;
             fileSize += packet[packetIndex] << 24;
             packetIndex++;
@@ -158,7 +190,7 @@ int readControlPacket(unsigned char b, unsigned char* packet, const char* filena
 }
 
 
-int receivefile(int fd, const char* filename) {
+int receiveFile(int fd, const char* filename) {
     unsigned char buffer[256]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
     int done = 0;
 

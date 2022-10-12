@@ -22,7 +22,7 @@ typedef struct
 
 typedef struct 
 {
-    char* fileName;
+    const char* fileName;
     int fileSize;
     
 } ControlPacketInformation;
@@ -55,6 +55,5 @@ int llclose(int showStatistics);
 
 int openSerialPort(const char *port, int baudRate);
 
-LinkLayer createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout);
 
 #endif // _LINK_LAYER_H_

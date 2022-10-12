@@ -25,7 +25,10 @@
 #define CONTROL_BYTE_END 0x03
 #define CONTROL_BYTE_DATA 0x01
 
+
+#define FILE_SIZE_BYTE 0x00
 #define FILE_NAME_BYTE 0x01
+
 
 #define MAX_TRIES 3
 
