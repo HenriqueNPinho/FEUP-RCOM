@@ -45,7 +45,7 @@ void disableAlarm(){
 
 
 int ControlByteCheck(unsigned char b){
-    return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA;
+    return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA | b==CONTROL_BYTE_DISC;
 }
 void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb){
     switch (*currState)
@@ -201,9 +201,65 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 // LLCLOSE
 ////////////////////////////////////////////////
-int llclose(int showStatistics)
+int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int showStatistics"
 {
-    // TODO
+    if (ll.role == TRANSMITTER) {
+        unsigned char  ctrlFrame[5];
+        ctrlFrame[0]=FLAG;
+        ctrlFrame[1]=ADDRESS_FIELD;
+        ctrlFrame[2]=CONTROL_BYTE_DISC;
+        ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
+        ctrlFrame[4]=FLAG;
+
+        do{
+            write(fd, ctrlFrame, 5);
+            printf("DISC Sent\n");
+            alarmFlag = 0;
+            startAlarm();        
+            readReceiverResponse(fd);
+            if(!alarmFlag)
+                printf("DISC received\n");
+        }
+        while (alarmCount<MAX_TRIES && alarmFlag);
+        disableAlarm();
+
+        if(alarmCount>MAX_TRIES){
+            printf("max tries exceeded\n");
+            exit(-1);
+        } else {
+            unsigned char  ctrlFrame[5];
+            ctrlFrame[0]=FLAG;
+            ctrlFrame[1]=ADDRESS_FIELD;
+            ctrlFrame[2]=CONTROL_BYTE_UA;
+            ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
+            ctrlFrame[4]=FLAG;
+
+            write(fd, ctrlFrame, 5);
+            printf("Last UA Sent");
+        }
+
+    } else if (ll.role == RECEIVER) {
+        readTransmiterResponse(fd);
+        printf("DISC received\n");
+
+
+        unsigned char  ctrlFrame[5];
+        ctrlFrame[0]=FLAG;
+        ctrlFrame[1]=ADDRESS_FIELD;
+        ctrlFrame[2]=CONTROL_BYTE_DISC;
+        ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
+        ctrlFrame[4]=FLAG;
+        write(fd, ctrlFrame, 5);
+        printf("DISC Sent\n");
+
+    }
+
+    close(fd);
+
+    if (showStatistics == TRUE) {
+        printf("Statistics\n");
+    }
+
 
     return 1;
 }

@@ -43,7 +43,7 @@ int readFileInformation(const char* fileName){
 
 int sendControlPacket(unsigned char controlByte){
     // flag start - flag nome - tamanho nome- nome - flag size- tamanho size- size - 
-    unsigned char packet(5 + sizeof(packetInfo.fileName)+  sizeof(packetInfo.fileSize));
+    unsigned char packet[5 + sizeof(packetInfo.fileName)+  sizeof(packetInfo.fileSize)];
     int pIndex=0;
 
     packet[pIndex]=controlByte;
@@ -98,9 +98,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     {
     case LlTx:
         printf("testar LLTX\n");
-        sendFile(filename);
+        //sendFile(filename);
         break;
     case LlRx:
+        //printf("sou o receiver");
         if (receiveFile(fd,filename) != 0) {
             printf("ERROR RECEIVING FILE... :(\n");
             exit(EXIT_FAILURE);
@@ -110,6 +111,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         break;
     }
 
+    llclose(fd,ll);
+
 }
 
 
@@ -117,7 +120,7 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
     int packetIndex = 1;
     int fileNameSize = 0;
     int fileSize = 0;
-    char* fileName;
+    char* fileNameReceived;
 
 
     if (controlByte == CONTROL_BYTE_START) {
@@ -126,14 +129,14 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
 
             packetIndex++;
             fileNameSize = packet[packetIndex];
-            fileName = (char*) malloc(packet[packetIndex]+1);
+            fileNameReceived = (char*) malloc(packet[packetIndex]+1);
             packetIndex++;
 
             for (int i = 0; i < fileNameSize; i++) {
-                fileName[i] = packet[packetIndex++];
+                fileNameReceived[i] = packet[packetIndex++];
 
                 if (i == fileNameSize-1) {
-                    fileName[fileNameSize] = '\0';
+                    fileNameReceived[fileNameSize] = '\0';
                 }
             }
             
@@ -153,26 +156,36 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         }
 
 
+        if (strcmp(filename,fileNameReceived) == 0) {
+            packetInfo.fileName = fileNameReceived;
+            packetInfo.fileSize = fileSize;
+        } else {
+            printf("Error file name unknown at start...\n");
+            exit(EXIT_FAILURE);
+        }
+        
+
+
     } else if (controlByte== CONTROL_BYTE_END) {
 
         if (packet[packetIndex] == FILE_NAME_BYTE) {
 
             packetIndex++;
             fileNameSize = packet[packetIndex];
-            fileName = (char*) malloc(packet[packetIndex]+1);
+            fileNameReceived = (char*) malloc(packet[packetIndex]+1);
             packetIndex++;
 
             for (int i = 0; i < fileNameSize; i++) {
-                fileName[i] = packet[packetIndex++];
+                fileNameReceived[i] = packet[packetIndex++];
 
                 if (i == fileNameSize-1) {
-                    fileName[fileNameSize] = '\0';
+                    fileNameReceived[fileNameSize] = '\0';
                 }
             }
 
         }
 
-        if(packet[packetIndex] == FILE_SIZE_BYTE){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho
+        if(packet[packetIndex] == FILE_SIZE_BYTE){ 
             packetIndex+=2;
             fileSize += packet[packetIndex] << 24;
             packetIndex++;
@@ -184,7 +197,15 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
             
         }
 
+        if (strcmp(packetInfo.fileName,fileNameReceived) != 0) {
+            printf("Different file name at end...\n");
+        } 
+        if (packetInfo.fileSize != fileSize) {
+            printf("Different file size at end...\n");
+        }
+
     }
+
     
     return 0;
 }
@@ -194,11 +215,12 @@ int receiveFile(int fd, const char* filename) {
     unsigned char buffer[256]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
     int done = 0;
 
-    while (!done) {
+    while (done==0) {
+        printf("estou fodido\n");
         //llread() para o buffer
         //no llread como é que lemos a partir da porta? nao da para a passar
         if (buffer[0] == CONTROL_BYTE_START) {
-            //readControlPacket(CONTROL_BYTE_START, buffer, filename);
+            readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }
 
         if (buffer[0] == CONTROL_BYTE_DATA) {

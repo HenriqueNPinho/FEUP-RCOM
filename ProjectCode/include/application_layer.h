@@ -8,6 +8,7 @@
 
 void createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout);
 int readFileInformation(const char* fileName);
+int sendControlPacket(unsigned char controlByte);
 int sendFile(const char* filename);
 // Application layer main function.
 // Arguments:
@@ -19,9 +20,15 @@ int sendFile(const char* filename);
 //   filename: Name of the file to send / receive.
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
+// Arguments:
+//  controlByte: control byte for START and END.
+//  packet: buffer to use.
+//  filename: file name to compare.
+int readControlPacket(unsigned char controlByte, unsigned char* packet, const char* filename);
 
-                      
-int readControlPacket(unsigned char b, unsigned char* packet, const char* filename);
+// Arguments:
+//  fd: Connection Port.
+//  filename: file name for comparisons.
 int receiveFile(int fd, const char* filename);
 
 #endif // _APPLICATION_LAYER_H_
