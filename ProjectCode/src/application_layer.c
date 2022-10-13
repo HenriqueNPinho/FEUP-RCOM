@@ -8,10 +8,11 @@ LinkLayer ll; //l27
 ControlPacketInformation packetInfo;
 
 
-void createLinkLayer(const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
+void createLinkLayer(int fd,const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
 //    LinkLayer ll = malloc(sizeof(LinkLayer));
    
     strcpy(ll.serialPort,serialPort);
+    ll.fdPort=fd;
     ll.role = role;
     ll.baudRate = baudRate;
     ll.nRetransmissions = nRetransmissions;
@@ -34,6 +35,7 @@ int readFileInformation(const char* fileName){
         return -1;
     }
 
+    packetInfo.fdFile=fd;
     packetInfo.fileName = fileName;
     packetInfo.fileSize = status.st_size;
 
@@ -61,6 +63,27 @@ int sendControlPacket(unsigned char controlByte){
         packet[pIndex]= packetInfo.fileName[i];
         pIndex++;
     }
+
+    packet[pIndex]=FILE_SIZE_BYTE;
+    pIndex++;
+
+    packet[pIndex]=sizeof(packetInfo.fileSize);
+    pIndex++;
+
+    packet[pIndex]= (packetInfo.fileSize >>24 ) & BYTE_MASK;
+    pIndex++;
+    packet[pIndex]= (packetInfo.fileSize >>16 ) & BYTE_MASK;
+    pIndex++;
+    packet[pIndex]= (packetInfo.fileSize >>8 ) & BYTE_MASK;
+    pIndex++;
+    packet[pIndex]= (packetInfo.fileSize) & BYTE_MASK;
+    pIndex++;
+
+    if(llwrite(ll.fdPort,packet, pIndex)<pIndex){
+        printf("error writing control packet\n");
+        return -1;
+    }
+    return 0;
 }
 int sendFile(const char* filename){
     if(readFileInformation(filename)<0){
@@ -90,9 +113,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         exit(EXIT_FAILURE);
     }
 
-    createLinkLayer(serialPort, llrole, baudRate, nTries, timeout);
+    createLinkLayer(fd, serialPort, llrole, baudRate, nTries, timeout);
 
-    llopen(fd, ll);
+    llopen(ll.fdPort, ll);
 
     switch (ll.role)
     {
@@ -102,7 +125,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         break;
     case LlRx:
         //printf("sou o receiver");
-        if (receiveFile(fd,filename) != 0) {
+        if (receiveFile(filename) != 0) {
             printf("ERROR RECEIVING FILE... :(\n");
             exit(EXIT_FAILURE);
         }
@@ -111,7 +134,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         break;
     }
 
-    llclose(fd,ll);
+    llclose(ll.fdPort,ll,0);   //////////so para passar na compilaçao
 
 }
 
@@ -211,7 +234,7 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
 }
 
 
-int receiveFile(int fd, const char* filename) {
+int receiveFile(const char* filename) {
     unsigned char buffer[256]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
     int done = 0;
 

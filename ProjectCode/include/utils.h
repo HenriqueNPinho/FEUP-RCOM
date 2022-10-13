@@ -29,6 +29,7 @@
 
 #define FILE_SIZE_BYTE 0x00
 #define FILE_NAME_BYTE 0x01
+#define BYTE_MASK 0xFF
 
 
 #define MAX_TRIES 3

@@ -14,6 +14,7 @@ typedef enum
 typedef struct
 {
     char serialPort[50];
+    int fdPort;
     LinkLayerRole role;
     int baudRate;
     int nRetransmissions;
@@ -24,6 +25,7 @@ typedef struct
 {
     const char* fileName;
     int fileSize;
+    int fdFile;
     
 } ControlPacketInformation;
 
@@ -42,7 +44,7 @@ int llopen(int fd, LinkLayer connectionParameters);
 
 // Send data in buf with size bufSize.
 // Return number of chars written, or "-1" on error.
-int llwrite(const unsigned char *buf, int bufSize);
+int llwrite(int fd, const unsigned char *buf, int bufSize);
 
 // Receive data in packet.
 // Return number of chars read, or "-1" on error.

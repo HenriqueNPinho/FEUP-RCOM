@@ -181,7 +181,7 @@ int llopen(int fd, LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 // LLWRITE
 ////////////////////////////////////////////////
-int llwrite(const unsigned char *buf, int bufSize)
+int llwrite(int fd, const unsigned char *buf, int bufSize)
 {
     // TODO
 
@@ -253,6 +253,15 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         printf("DISC Sent\n");
 
     }
+
+    
+    
+    tcflush(fd, TCIOFLUSH);
+
+	if (tcsetattr(fd, TCSANOW, &oldtio) == -1) {
+		perror("tcsetattr");
+		exit(-1);
+	}
 
     close(fd);
 
