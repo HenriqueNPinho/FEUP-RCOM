@@ -183,9 +183,9 @@ int llopen(int fd, LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(int fd, const unsigned char *buf, int bufSize)
 {
-    // TODO
+    int unsigned nChars = 0;
 
-    return 0;
+   return nChars;
 }
 
 ////////////////////////////////////////////////

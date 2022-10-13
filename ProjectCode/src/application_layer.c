@@ -85,6 +85,7 @@ int sendControlPacket(unsigned char controlByte){
     }
     return 0;
 }
+
 int sendFile(const char* filename){
     if(readFileInformation(filename)<0){
         printf("Could not read file information\n");
