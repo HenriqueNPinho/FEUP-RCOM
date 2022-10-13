@@ -181,9 +181,38 @@ int llopen(int fd, LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 // LLWRITE
 ////////////////////////////////////////////////
+int ns=0;
+
 int llwrite(int fd, const unsigned char *buf, int bufSize)
-{
+{  //FLAG - A- C - BCC1 - Data - BCC2 - FLAG
+  //               a^c            
     int unsigned nChars = 0;
+
+    do{
+        unsigned char frame[2*bufSize+7]; //2* in case we need to stuff every byte
+
+        frame[0]=FLAG;
+        frame[1]=ADDRESS_FIELD;
+        
+        if(ns==0){
+            frame[2]=CONTROL_BYTE_0;
+        }
+        else if(ns==1){
+            frame[2]=CONTROL_BYTE_1;
+        }
+        frame[3]= frame[1] ^ frame[2];
+
+        int fAux=4; 
+
+        
+    }
+    while(info.numTries < MAX_TRIES && alarmFlag)
+    if(ns==0){
+        ns=1;
+    }
+    else if(ns==1){
+        ns=0;
+    }
 
    return nChars;
 }

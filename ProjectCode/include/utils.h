@@ -31,6 +31,9 @@
 #define FILE_NAME_BYTE 0x01
 #define BYTE_MASK 0xFF
 
+#define CONTROL_BYTE_0   0x00
+#define CONTROL_BYTE_1   0x40
+
 
 #define MAX_TRIES 3
 
