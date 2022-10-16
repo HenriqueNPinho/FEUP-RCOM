@@ -45,7 +45,8 @@ void disableAlarm(){
 
 
 int ControlByteCheck(unsigned char b){
-    return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA | b==CONTROL_BYTE_DISC;
+    return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA | b==CONTROL_BYTE_DISC 
+    || b== CONTROL_BYTE_RR0 || b == CONTROL_BYTE_RR1 || b == CONTROL_BYTE_REJ0 || b == CONTROL_BYTE_REJ1;
 }
 void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb){
     switch (*currState)
@@ -183,6 +184,40 @@ int llopen(int fd, LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int ns=0;
 
+int readCtrlByte(int fd, unsigned char *CtrlB){
+  unsigned char b;
+  enum state state= START;
+
+  while(state!=STOP && alarmFlag==0){    //ler a trama de controlo
+    if(read(fd,&b,1)<0){
+      perror("Error reading byte of the receiver response");
+    }
+       SMresponse(&state,b,CtrlB);
+  }
+
+  if(*ControlByte==CONTROL_BYTE_RR0 && ns==1){
+    printf("Received postive ACK 0\n");
+    return 0;
+  }
+  else if(*ControlByte==CONTROL_BYTE_RR1 && ns==0){
+     printf("Received postive ACK 1\n");
+      return 0;
+  }
+  else if(*ControlByte==CONTROL_BYTE_REJ0 && ns==1){
+    printf("Received negative ACK 0\n");
+    return -1;
+  }
+  else if(*ControlByte==CONTROL_BYTE_REJ1 && ns==0){
+    printf("Received negative ACK 1\n");
+    return -1;
+  }
+  else {
+     return -1;
+  }
+  return 0;
+
+}
+
 int llwrite(int fd, const unsigned char *buf, int bufSize)
 {  //FLAG - A- C - BCC1 - Data - BCC2 - FLAG
   //               a^c            
@@ -191,7 +226,7 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
     do{
         unsigned char frame[2*bufSize+7]; //2* in case we need to stuff every byte
 
-        frame[0]=FLAG;
+        frame[0]=FLAG;  
         frame[1]=ADDRESS_FIELD;
         
         if(ns==0){
@@ -200,13 +235,53 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
         else if(ns==1){
             frame[2]=CONTROL_BYTE_1;
         }
-        frame[3]= frame[1] ^ frame[2];
 
-        int fAux=4; 
+        frame[3]= frame[1] ^ frame[2];  //bcc1
 
+        int fIndex=4; 
+
+        unsigned char bcc2 = 0x00;
+        for(size_t i=0; i< bufSize;i++){
+            bcc2^=buf[i];
+
+            if(buf[i]==FLAG || buf[i]==ESC_BYTE){ //slide 13, ponto 1&2
+                frame[fIndex]=ESC_BYTE;
+                fIndex++;
+                frame[fIndex]=buf[i]^STUFFING_BYTE;
+                fIndex++;
+            }
+            else{
+                frame[fIndex]=buf[i];
+                fIndex++;
+            }
+        }
+
+        if(bcc2=FLAG || bcc2 = ESC_BYTE){  //slide 13, ponto 1&2
+             frame[fIndex]=ESC_BYTE;
+                fIndex++;
+                frame[fIndex]=buf[i]^STUFFING_BYTE;
+                fIndex++;
+        }
+        else{
+            frame[fIndex]=buf[i];
+            fIndex++;
+        }
+        frame[fIndex]=FLAG;
+
+        printf("A escrever \n");
+        nChars = write(fd,frameToSend,fIndex+1);
+        printf("Sent frame with sequence number %d\n\n",ns);
+
+        startAlarm();
+        unsigned char CtrlByte;
+        if(readCtrlByte(fd, &CtrlByte)==-1){
+        disableAlarm();
+        alarmFlag=1;  //tentar enviar outra vez se der erro
+        }
         
     }
     while(info.numTries < MAX_TRIES && alarmFlag)
+
     if(ns==0){
         ns=1;
     }
