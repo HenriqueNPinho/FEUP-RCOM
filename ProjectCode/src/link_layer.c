@@ -115,7 +115,7 @@ void readReceiverResponse(int fd){
 
 }
 
-void readTransmiterResponse(int fd){
+void readTransmitterResponse(int fd){
 
     unsigned char b, controlb;
     enum state state=START;
@@ -123,7 +123,7 @@ void readTransmiterResponse(int fd){
     while(state!=STOP){
       
         if(read(fd,&b, 1)<0){
-            perror("error reading transmiter response\n");
+            perror("error reading transmitter response\n");
         }
          
         SMresponse(&state, b, &controlb);
@@ -159,7 +159,7 @@ int llopen(int fd, LinkLayer connectionParameters)
         }
     }
     else if(connectionParameters.role==RECEIVER){
-        readTransmiterResponse(fd);
+        readTransmitterResponse(fd);
         printf("SET received\n");
         
         unsigned char  ctrlFrame[5];
@@ -325,15 +325,17 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
             alarmFlag = 0;
             startAlarm();        
             readReceiverResponse(fd);
-            if(!alarmFlag)
-                printf("DISC received\n");
         }
         while (alarmCount<MAX_TRIES && alarmFlag);
+
+        if(!alarmFlag)
+        printf("DISC received\n");
+
         disableAlarm();
 
-        if(alarmCount>MAX_TRIES){
+        if(alarmCount>=MAX_TRIES){
             printf("max tries exceeded\n");
-            exit(-1);
+            return -1;
         } else {
             unsigned char  ctrlFrame[5];
             ctrlFrame[0]=FLAG;
@@ -343,13 +345,13 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
             ctrlFrame[4]=FLAG;
 
             write(fd, ctrlFrame, 5);
-            printf("Last UA Sent");
+            printf("Last UA Sent\n");
+            sleep(-1);
         }
 
     } else if (ll.role == RECEIVER) {
-        readTransmiterResponse(fd);
+        readTransmitterResponse(fd);
         printf("DISC received\n");
-
 
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
@@ -360,6 +362,8 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         write(fd, ctrlFrame, 5);
         printf("DISC Sent\n");
 
+        readTransmitterResponse(fd); 
+        printf("Received UA\n");
     }
 
     
