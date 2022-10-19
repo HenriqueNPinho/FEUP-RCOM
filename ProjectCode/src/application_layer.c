@@ -98,7 +98,7 @@ int sendDataPacket(){
         if((bytesRead = read(packetInfo.fdFile,buffer,app.packetSize)) < 0){
             printf("Error reading file\n");
         }
-        unsigned char packet[4+packetInfo.fileSize;
+        unsigned char packet[4+packetInfo.fileSize];
         packet[0] = CONTROL_BYTE_DATA;
         packet[1] = numPacketsSent % 255;
         packet[2] = bytesRead / 256;
