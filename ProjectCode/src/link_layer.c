@@ -328,8 +328,9 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         }
         while (alarmCount<MAX_TRIES && alarmFlag);
 
-        if(!alarmFlag)
-        printf("DISC received\n");
+        if(!alarmFlag){
+            printf("DISC received\n");
+        }
 
         disableAlarm();
 
@@ -346,7 +347,7 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
 
             write(fd, ctrlFrame, 5);
             printf("Last UA Sent\n");
-            sleep(-1);
+            //sleep(-1);
         }
 
     } else if (ll.role == RECEIVER) {
@@ -363,7 +364,8 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         printf("DISC Sent\n");
 
         readTransmitterResponse(fd); 
-        printf("Received UA\n");
+        //printf("Received UA\n"); se descomentares este print o receiver nao acaba,
+        // se descomentares o sleep na linah 350, acaba o receiver mas o tx não
     }
 
     
