@@ -363,7 +363,9 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         write(fd, ctrlFrame, 5);
         printf("DISC Sent\n");
 
-        readTransmitterResponse(fd); 
+        readTransmitterResponse(fd); //se tirares isto o tx não acaba, se ficar terminam os 2 sem erros
+
+
         //printf("Received UA\n"); se descomentares este print o receiver nao acaba,
         // se descomentares o sleep na linah 350, acaba o receiver mas o tx não
     }
