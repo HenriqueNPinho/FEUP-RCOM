@@ -154,15 +154,11 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     switch (ll.role)
     {
     case LlTx:
-        printf("testar LLTX\n");
-        //sendFile(filename);
+        sendFile(filename);
         break;
     case LlRx:
-        //printf("sou o receiver");
-        if (receiveFile(filename) != 0) {
-            printf("ERROR RECEIVING FILE... :(\n");
-            exit(EXIT_FAILURE);
-        }
+        printf("sou o receiver\n");
+        //receiveFile(filename);     
         break;
     default:
         break;
