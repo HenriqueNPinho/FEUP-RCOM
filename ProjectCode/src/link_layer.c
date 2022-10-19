@@ -280,13 +280,18 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
         }
         
     }
-    while(info.numTries < MAX_TRIES && alarmFlag)
-
+    while(alarmCount < MAX_TRIES && alarmFlag)
+    disableAlarm();
+    
     if(ns==0){
         ns=1;
     }
     else if(ns==1){
         ns=0;
+    }
+
+    if(alarmCount>=MAX_TRIES){
+        printf("Max tries exceeded");
     }
 
    return nChars;
