@@ -9,7 +9,6 @@ ControlPacketInformation packetInfo;
 
 
 void createLinkLayer(int fd,const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
-//    LinkLayer ll = malloc(sizeof(LinkLayer));
    
     strcpy(ll.serialPort,serialPort);
     ll.fdPort=fd;
@@ -48,36 +47,32 @@ int sendControlPacket(unsigned char controlByte){
     unsigned char packet[5 + sizeof(packetInfo.fileName)+  sizeof(packetInfo.fileSize)];
     int pIndex=0;
 
-    packet[pIndex]=controlByte;
-    pIndex++;
+    packet[pIndex++]=controlByte;
 
-
-    packet[pIndex]=FILE_NAME_BYTE;
-    pIndex++;
+    packet[pIndex++]=FILE_NAME_BYTE;
 
     
-    packet[pIndex]= sizeof(packetInfo.fileName);
-    pIndex++;
+    packet[pIndex++]= sizeof(packetInfo.fileName);
+   
 
     for(int i = 0; i< sizeof(packetInfo.fileName);i++){
-        packet[pIndex]= packetInfo.fileName[i];
-        pIndex++;
+        packet[pIndex++]= packetInfo.fileName[i];
+     
     }
 
-    packet[pIndex]=FILE_SIZE_BYTE;
-    pIndex++;
+    packet[pIndex++]=FILE_SIZE_BYTE;
 
-    packet[pIndex]=sizeof(packetInfo.fileSize);
-    pIndex++;
+    packet[pIndex++]=sizeof(packetInfo.fileSize);
 
-    packet[pIndex]= (packetInfo.fileSize >>24 ) & BYTE_MASK;
-    pIndex++;
-    packet[pIndex]= (packetInfo.fileSize >>16 ) & BYTE_MASK;
-    pIndex++;
-    packet[pIndex]= (packetInfo.fileSize >>8 ) & BYTE_MASK;
-    pIndex++;
-    packet[pIndex]= (packetInfo.fileSize) & BYTE_MASK;
-    pIndex++;
+
+    packet[pIndex++]= (packetInfo.fileSize >>24 ) & BYTE_MASK;
+
+    packet[pIndex++]= (packetInfo.fileSize >>16 ) & BYTE_MASK;
+ 
+    packet[pIndex++]= (packetInfo.fileSize >>8 ) & BYTE_MASK;
+  
+    packet[pIndex++]= (packetInfo.fileSize) & BYTE_MASK;
+  
 
     if(llwrite(ll.fdPort,packet, pIndex)<pIndex){
         printf("error writing control packet\n");
@@ -95,7 +90,7 @@ int sendDataPacket(){
 
     while(numPacketsSent < numPacketsToSend){
 
-        if((bytesRead = read(packetInfo.fdFile,buffer,app.packetSize)) < 0){
+        if((bytesRead = read(packetInfo.fdFile,buffer,packetInfo.fileSize)) < 0){
             printf("Error reading file\n");
         }
         unsigned char packet[4+packetInfo.fileSize];
@@ -106,7 +101,7 @@ int sendDataPacket(){
         memcpy(&packet[4],buffer,bytesRead);
         length = bytesRead + 4;
 
-        if(llwrite(packetInfo.fdPort,packet,length) < length){
+        if(llwrite(ll.fdPort,packet,length) < length){
             printf("Error writing data packet to serial port!\n");
             return -1;
         }
@@ -207,12 +202,9 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         if(packet[packetIndex] == FILE_SIZE_BYTE){ //Ainda estou a tentar entender o que se passa aqui para calcular o tamanho -> otimizaçao 400>>8 = 15
 
             packetIndex+=2;
-            fileSize += packet[packetIndex] << 24;
-            packetIndex++;
-            fileSize += packet[packetIndex] << 16;
-            packetIndex++;
-            fileSize += packet[packetIndex] << 8; 
-            packetIndex++;
+            fileSize += packet[packetIndex++] << 24;
+            fileSize += packet[packetIndex++] << 16;
+            fileSize += packet[packetIndex++] << 8;
             fileSize += packet[packetIndex];
         
         }
@@ -249,12 +241,9 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
 
         if(packet[packetIndex] == FILE_SIZE_BYTE){ 
             packetIndex+=2;
-            fileSize += packet[packetIndex] << 24;
-            packetIndex++;
-            fileSize += packet[packetIndex] << 16;
-            packetIndex++;
-            fileSize += packet[packetIndex] << 8;
-            packetIndex++;
+            fileSize += packet[packetIndex++] << 24;
+            fileSize += packet[packetIndex++] << 16;
+            fileSize += packet[packetIndex++] << 8;
             fileSize += packet[packetIndex];
             
         }

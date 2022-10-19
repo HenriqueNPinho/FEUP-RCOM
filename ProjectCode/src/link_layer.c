@@ -195,19 +195,19 @@ int readCtrlByte(int fd, unsigned char *CtrlB){
        SMresponse(&state,b,CtrlB);
   }
 
-  if(*ControlByte==CONTROL_BYTE_RR0 && ns==1){
+  if(*CtrlB==CONTROL_BYTE_RR0 && ns==1){
     printf("Received postive ACK 0\n");
     return 0;
   }
-  else if(*ControlByte==CONTROL_BYTE_RR1 && ns==0){
+  else if(*CtrlB==CONTROL_BYTE_RR1 && ns==0){
      printf("Received postive ACK 1\n");
       return 0;
   }
-  else if(*ControlByte==CONTROL_BYTE_REJ0 && ns==1){
+  else if(*CtrlB==CONTROL_BYTE_REJ0 && ns==1){
     printf("Received negative ACK 0\n");
     return -1;
   }
-  else if(*ControlByte==CONTROL_BYTE_REJ1 && ns==0){
+  else if(*CtrlB==CONTROL_BYTE_REJ1 && ns==0){
     printf("Received negative ACK 1\n");
     return -1;
   }
@@ -245,31 +245,30 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
             bcc2^=buf[i];
 
             if(buf[i]==FLAG || buf[i]==ESC_BYTE){ //slide 13, ponto 1&2
-                frame[fIndex]=ESC_BYTE;
-                fIndex++;
-                frame[fIndex]=buf[i]^STUFFING_BYTE;
-                fIndex++;
+                frame[fIndex++]=ESC_BYTE;
+           
+                frame[fIndex++]=buf[i]^STUFFING_BYTE;
+           
             }
             else{
-                frame[fIndex]=buf[i];
-                fIndex++;
+                frame[fIndex++]=buf[i];
+              
             }
         }
 
-        if(bcc2=FLAG || bcc2 = ESC_BYTE){  //slide 13, ponto 1&2
-             frame[fIndex]=ESC_BYTE;
-                fIndex++;
-                frame[fIndex]=buf[i]^STUFFING_BYTE;
-                fIndex++;
+        if(bcc2==FLAG || bcc2 == ESC_BYTE){  //slide 13, ponto 1&2
+            frame[fIndex++]=ESC_BYTE;
+            frame[fIndex++]=bcc2^STUFFING_BYTE;
+          
         }
         else{
-            frame[fIndex]=buf[i];
-            fIndex++;
+            frame[fIndex++]=bcc2;
+           
         }
         frame[fIndex]=FLAG;
 
         printf("A escrever \n");
-        nChars = write(fd,frameToSend,fIndex+1);
+        nChars = write(fd,frame,fIndex+1);
         printf("Sent frame with sequence number %d\n\n",ns);
 
         startAlarm();
@@ -280,9 +279,9 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
         }
         
     }
-    while(alarmCount < MAX_TRIES && alarmFlag)
+    while(alarmCount < MAX_TRIES && alarmFlag);
     disableAlarm();
-    
+
     if(ns==0){
         ns=1;
     }
