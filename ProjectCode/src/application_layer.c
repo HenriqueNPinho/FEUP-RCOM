@@ -85,16 +85,54 @@ int sendControlPacket(unsigned char controlByte){
     }
     return 0;
 }
+int sendDataPacket(){
 
+    int numPacketsSent = 0;
+    int numPacketsToSend = packetInfo.fileSize;       // numero máximo de de octetos num packet
+    unsigned char buffer[packetInfo.fileSize];
+    int bytesRead = 0;
+    int length = 0;
+
+    while(numPacketsSent < numPacketsToSend){
+
+        if((bytesRead = read(packetInfo.fdFile,buffer,app.packetSize)) < 0){
+            printf("Error reading file\n");
+        }
+        unsigned char packet[4+packetInfo.fileSize;
+        packet[0] = CONTROL_BYTE_DATA;
+        packet[1] = numPacketsSent % 255;
+        packet[2] = bytesRead / 256;
+        packet[3] = bytesRead % 256;
+        memcpy(&packet[4],buffer,bytesRead);
+        length = bytesRead + 4;
+
+        if(llwrite(packetInfo.fdPort,packet,length) < length){
+            printf("Error writing data packet to serial port!\n");
+            return -1;
+        }
+        numPacketsSent++;
+    }
+
+    return 0;
+}
 int sendFile(const char* filename){
     if(readFileInformation(filename)<0){
         printf("Could not read file information\n");
         return -1;
     }
-    /*if(sendControlPacket(flag start)<0)  //start flag
-     if()   //send file
-    if()     //end flag
-    */
+    if(sendControlPacket(CONTROL_BYTE_START)<0){
+        printf("Could not send start control packet\n");
+        return -1;
+    }  //start flag
+    if(sendDataPacket()<0){
+          printf("Could not send data packet\n");
+        return -1;
+    }   //send file
+    if(sendControlPacket(CONTROL_BYTE_END)<0){
+        printf("Could not send end control packet\n");
+        return -1;
+    }    //end flag
+    return 0;
 }
 
 
