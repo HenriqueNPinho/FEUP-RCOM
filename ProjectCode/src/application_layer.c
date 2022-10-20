@@ -155,11 +155,11 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     {
     case LlTx:
         printf("sou o transmitter\n");
-        //sendFile(filename);
+        sendFile(filename);
         break;
     case LlRx:
         printf("sou o receiver\n");
-        //receiveFile(filename);     
+        receiveFile(filename);     
         break;
     default:
         break;

@@ -45,7 +45,7 @@ void disableAlarm(){
 
 
 int ControlByteCheck(unsigned char b){
-    return b==CONTROL_BYTE_SET | b==CONTROL_BYTE_UA | b==CONTROL_BYTE_DISC 
+    return b==CONTROL_BYTE_SET || b==CONTROL_BYTE_UA || b==CONTROL_BYTE_DISC 
     || b== CONTROL_BYTE_RR0 || b == CONTROL_BYTE_RR1 || b == CONTROL_BYTE_REJ0 || b == CONTROL_BYTE_REJ1;
 }
 void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb){
@@ -125,7 +125,7 @@ void readTransmitterResponse(int fd){
         if(read(fd,&b, 1)<0){
             perror("error reading transmitter response\n");
         }
-         
+        
         SMresponse(&state, b, &controlb);
     }
 
@@ -303,11 +303,11 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
 void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned char* controlByte) {
     switch(*currentState){
         case START:
-            if(byte == FLAG)     //flag
+            if(byte == FLAG)    
                 *currentState = FLG_RCV;
             break;
         case FLG_RCV:
-            if(byte == ADDRESS_FIELD)   //acknowlegement
+            if(byte == ADDRESS_FIELD)   
                 *currentState = A_RCV;
             else if(byte != FLAG)
                 *currentState = START;
@@ -364,6 +364,34 @@ int readTransmitterFrame(int fd, unsigned char* buffer) {
     return pos;
 }
 
+
+int verifyFrame(unsigned char* frame, int length) {
+    unsigned char addressField = frame[1];
+    unsigned char controlByte = frame[2];
+    unsigned char bcc1 = frame[3];
+    unsigned char bcc2 = frame[length-2];
+    unsigned char aux = 0x00;
+
+    //verify if bcc1 is correct
+    if (controlByte != CONTROL_BYTE_0 && controlByte != CONTROL_BYTE_1) {
+        printf("Error in the protocol! (bcc1)\n");
+        return -1;
+    } else if(bcc1 == (addressField^controlByte)){
+        //verify if bcc2 is correct
+        for (size_t i = 4; i < length-2; i++) {
+            aux^=frame[i];
+        }
+
+        if(bcc2 != aux) {
+            printf("Error in the data! (bcc2)\n");
+            return -2;
+        }
+    }
+
+        return 0;
+
+}
+
 int llread(int fd,unsigned char *packet)
 {
     int received = 0;
@@ -373,13 +401,97 @@ int llread(int fd,unsigned char *packet)
     int packetIndex = 0;
     alarmCount = 0;
 
-    while (received == 0)
-    {
+    while (received == 0) {
         length = readTransmitterFrame(fd,auxBuffer);
+        printf("frame received\n");
+
+        if (length > 0) {
+            unsigned char originalFrame[2*length+7];
+
+            originalFrame[0] = auxBuffer[0];
+            originalFrame[1] = auxBuffer[1];
+            originalFrame[2] = auxBuffer[2];
+            originalFrame[3] = auxBuffer[3];
+
+            int originalFrameIndex = 4;
+            int escapeByteFound = FALSE;
+
+            for (int i = 4; i < length-1; i++) {
+                if (auxBuffer[i] == ESC_BYTE) {
+                    escapeByteFound = TRUE;
+                    continue;
+                } else if (auxBuffer[i] == (FLAG^STUFFING_BYTE) && escapeByteFound) {
+                    originalFrame[originalFrameIndex++] = FLAG;
+                    escapeByteFound = FALSE;
+                } else if (auxBuffer[i] == (ESC_BYTE^STUFFING_BYTE) && escapeByteFound) {
+                    originalFrame[originalFrameIndex++] = ESC_BYTE;
+                    escapeByteFound = FALSE;
+                } else {
+                    originalFrame[originalFrameIndex++] = auxBuffer[i];
+                }
+            }
+
+            originalFrame[originalFrameIndex] = auxBuffer[length-1];
+            controlByte = originalFrame[2];
+
+            if (verifyFrame(originalFrame,originalFrameIndex+1) != 0) {
+                if (controlByte == CONTROL_BYTE_0) {
+                    printf("Rejected frame with 1 as sequence number\n");
+                    unsigned char frame[5];
+                    frame[0] = FLAG;
+                    frame[1] = ADDRESS_FIELD;
+                    frame[2] = CONTROL_BYTE_REJ0;
+                    frame[3] = frame[1] ^ frame[2];
+                    frame[4] = FLAG;
+                    int res = write(fd,frame,5);
+                    printf("Sent negative ACK 0 (REJ0) - %d bytes written\n",res);
+                } else if (controlByte == CONTROL_BYTE_1) {
+                    printf("Rejected frame with 0 as sequence number\n");
+                    unsigned char frame[5];
+                    frame[0] = FLAG;
+                    frame[1] = ADDRESS_FIELD;
+                    frame[2] = CONTROL_BYTE_REJ1;
+                    frame[3] = frame[1] ^ frame[2];
+                    frame[4] = FLAG;
+                    int res = write(fd,frame,5);
+                    printf("Sent negative ACK 1 (REJ1) - %d bytes written\n",res);
+                }
+
+                return 0;
+
+            } else {
+
+                for (int i = 4; i < originalFrameIndex-1; i++) {
+                    packet[packetIndex++] = originalFrame[i];
+                }
+
+                if (controlByte == CONTROL_BYTE_0) {
+                    unsigned char frame[5];
+                    frame[0] = FLAG;
+                    frame[1] = ADDRESS_FIELD;
+                    frame[2] = CONTROL_BYTE_RR1;
+                    frame[3] = frame[1] ^ frame[2];
+                    frame[4] = FLAG;
+                    int res = write(fd, frame, 5);
+                    printf("Sent positive ACK 1 (RR1) - %d bytes written\n",res);
+                } else if (controlByte == CONTROL_BYTE_1) {
+                    unsigned char frame[5];
+                    frame[0] = FLAG;
+                    frame[1] = ADDRESS_FIELD;
+                    frame[2] = CONTROL_BYTE_RR0;
+                    frame[3] = frame[1] ^ frame[2];
+                    frame[4] = FLAG;
+                    int res = write(fd, frame, 5);
+                    printf("Sent positive ACK 0 (RR0) - %d bytes written\n",res);
+                }
+                received = 1;
+            }
+
+        }
     }
     
 
-    return 0;
+    return packetIndex;
 }
 
 ////////////////////////////////////////////////
@@ -388,6 +500,7 @@ int llread(int fd,unsigned char *packet)
 int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int showStatistics"
 {
     if (ll.role == TRANSMITTER) {
+        alarmCount = 0;
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
         ctrlFrame[1]=ADDRESS_FIELD;
@@ -421,8 +534,8 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
             ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
             ctrlFrame[4]=FLAG;
 
-            write(fd, ctrlFrame, 5);
-            printf("Last UA Sent\n");
+            int res = write(fd, ctrlFrame, 5);
+            printf("Last UA Sent - %d bytes written\n", res);
             //sleep(-1);
         }
 
@@ -436,12 +549,9 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         ctrlFrame[2]=CONTROL_BYTE_DISC;
         ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
         ctrlFrame[4]=FLAG;
-        write(fd, ctrlFrame, 5);
-        printf("DISC Sent\n");
-
-        readTransmitterResponse(fd); //se tirares isto o tx não acaba, se ficar terminam os 2 sem erros
-
-
+        int res = write(fd, ctrlFrame, 5);
+        printf("DISC Sent - %d bytes written\n", res);
+        //readTransmitterResponse(fd); //se tirares isto o tx não acaba, se ficar terminam os 2 sem erros
         //printf("Received UA\n"); se descomentares este print o receiver nao acaba,
         // se descomentares o sleep na linah 350, acaba o receiver mas o tx não
     }
@@ -461,8 +571,7 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         printf("Statistics\n");
     }
 
-
-    return 1;
+    return 0;
 }
 
 
@@ -503,3 +612,48 @@ int openSerialPort(const char* port, int baudRate)
 
     return fd;
 }
+
+
+
+
+
+
+
+
+
+
+/*switch (b)
+        {
+        case CONTROL_BYTE_DISC:
+            printf("FOI A CONTROL_BYTE_DISC\n");
+            break;
+        case CONTROL_BYTE_0:
+            printf("FOI A CONTROL_BYTE_0\n");
+            break;
+        case CONTROL_BYTE_1:
+            printf("FOI A CONTROL_BYTE_1\n");
+            break;
+        case CONTROL_BYTE_DATA:
+            printf("FOI A CONTROL_BYTE_DATA OU REJ0\n");
+            break;
+        case CONTROL_BYTE_END:
+            printf("FOI A END OU SET\n");
+            break;
+        case CONTROL_BYTE_REJ1:
+            printf("FOI A REJ1\n");
+            break;
+        case CONTROL_BYTE_RR0:
+            printf("FOI A CONTROL_BYTE_RR0\n");
+            break;
+        case CONTROL_BYTE_RR1:
+            printf("FOI A CONTROL_BYTE_RR1\n");
+            break;
+        case CONTROL_BYTE_START:
+            printf("FOI A CONTROL_BYTE_START\n");
+            break;
+        case CONTROL_BYTE_UA:
+            printf("FOI A CONTROL_BYTE_UA\n");
+            break;
+        default:
+            break;
+        }*/
