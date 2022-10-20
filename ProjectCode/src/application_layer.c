@@ -210,6 +210,7 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         if (strcmp(filename,fileNameReceived) == 0) {
             packetInfo.fileName = fileNameReceived;
             packetInfo.fileSize = fileSize;
+            packetInfo.fdFile = open(packetInfo.fileName,O_WRONLY | O_CREAT | O_APPEND, 0664);
         } else {
             printf("Error file name unknown at start...\n");
             exit(EXIT_FAILURE);
@@ -258,25 +259,38 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
     return 0;
 }
 
+int processDataPacket(unsigned char* buffer) {
+
+    int infoSize = 256*buffer[2]+buffer[3];
+ 
+    write(packetInfo.fdFile,buffer+4,infoSize);
+    return 0;
+}
+
 
 int receiveFile(const char* filename) {
-    unsigned char buffer[256]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
+    unsigned char buffer[MAX_PAYLOAD_SIZE+4]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
     int done = 0;
+    int lastSequenceNumber = -1;
+    int currentSequenceNumber;
 
     while (done==0) {
-        printf("estou fodido\n");
-        //llread() para o buffer
-        //no llread como é que lemos a partir da porta? nao da para a passar
+        llread(ll.fdPort, buffer); //para o buffer
+        
         if (buffer[0] == CONTROL_BYTE_START) {
             readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }
 
         if (buffer[0] == CONTROL_BYTE_DATA) {
+            currentSequenceNumber = (int)(buffer[1]);
+            if(lastSequenceNumber >= currentSequenceNumber && lastSequenceNumber != 254) {continue;}
 
+            processDataPacket(buffer);
+            lastSequenceNumber = currentSequenceNumber;
         }
 
         if (buffer[0] == CONTROL_BYTE_END) {
-            //readControlPacket(CONTROL_BYTE_END, buffer, filename);
+            readControlPacket(CONTROL_BYTE_END, buffer, filename);
             done = 1;
         }
     }

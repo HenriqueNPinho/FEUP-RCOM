@@ -299,9 +299,85 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 // LLREAD
 ////////////////////////////////////////////////
-int llread(unsigned char *packet)
+
+void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned char* controlByte) {
+    switch(*currentState){
+        case START:
+            if(byte == FLAG)     //flag
+                *currentState = FLG_RCV;
+            break;
+        case FLG_RCV:
+            if(byte == ADDRESS_FIELD)   //acknowlegement
+                *currentState = A_RCV;
+            else if(byte != FLAG)
+                *currentState = START;
+            break;
+        case A_RCV:
+            if(byte == CONTROL_BYTE_0 || byte == CONTROL_BYTE_1){
+              *currentState = C_RCV;
+              *controlByte = byte;
+            }
+            else if(FLAG == 0x7E){
+                *currentState = FLG_RCV;
+            }
+            else{
+                *currentState = START;
+            }
+            break;
+        case C_RCV:
+            if(byte == (ADDRESS_FIELD^(*controlByte)))
+              *currentState = BCC_OK;
+            else if(byte == FLAG)
+              *currentState = FLG_RCV;
+            else
+              *currentState = START;
+            
+            break;
+        case BCC_OK:
+            if(byte != FLAG)
+              *currentState = DATA_RCV;
+            break;
+        case DATA_RCV:
+            if(byte == FLAG)
+              *currentState = STOP;
+            break;
+        case STOP:
+            break;
+    }
+}
+
+int readTransmitterFrame(int fd, unsigned char* buffer) {
+    int pos;
+    unsigned char byte;
+    unsigned char controlByte;
+    enum state state = START;
+    while (state != STOP) {
+        if(read(fd,&byte,1)<0) {
+            printf("erro no byte 'readtransmitterframe'\n");
+        }
+
+        SMInformationFrame(&state,byte,&controlByte);
+        buffer[pos] = byte;
+        pos++;
+    }
+
+    return pos;
+}
+
+int llread(int fd,unsigned char *packet)
 {
-    // TODO
+    int received = 0;
+    int length = 0;
+    unsigned char controlByte;
+    unsigned char auxBuffer[131087];
+    int packetIndex = 0;
+    alarmCount = 0;
+
+    while (received == 0)
+    {
+        length = readTransmitterFrame(fd,auxBuffer);
+    }
+    
 
     return 0;
 }

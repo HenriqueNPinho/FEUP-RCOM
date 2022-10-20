@@ -45,4 +45,4 @@
 
 #define MAX_TRIES 3
 
-enum state{START, FLG_RCV, A_RCV, C_RCV, BCC_OK,STOP};
+enum state{START, FLG_RCV, A_RCV, C_RCV, BCC_OK,STOP, DATA_RCV};

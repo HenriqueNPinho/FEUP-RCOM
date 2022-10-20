@@ -26,6 +26,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 //  filename: file name to compare.
 int readControlPacket(unsigned char controlByte, unsigned char* packet, const char* filename);
 
+int processDataPacket(unsigned char* buffer);
 // Arguments:
 //  fd: Connection Port.
 //  filename: file name for comparisons.
