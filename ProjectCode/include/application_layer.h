@@ -6,7 +6,7 @@
 #include "../include/link_layer.h"
 
 
-void createLinkLayer(int fd, const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout);
+void createLinkLayer(int fd, const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout, int packetSize);
 int readFileInformation(const char* fileName);
 int sendControlPacket(unsigned char controlByte);
 int sendFile(const char* filename);
@@ -19,7 +19,7 @@ int sendFile(const char* filename);
 //   timeout: Frame timeout.
 //   filename: Name of the file to send / receive.
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
-                      int nTries, int timeout, const char *filename);
+                      int nTries, int timeout, const char *filename, int packetSize);
 // Arguments:
 //  controlByte: control byte for START and END.
 //  packet: buffer to use.

@@ -8,7 +8,7 @@ LinkLayer ll; //l27
 ControlPacketInformation packetInfo;
 
 
-void createLinkLayer(int fd,const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout) {
+void createLinkLayer(int fd,const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout, int packetSize) {
    
     strcpy(ll.serialPort,serialPort);
     ll.fdPort=fd;
@@ -16,6 +16,7 @@ void createLinkLayer(int fd,const char* serialPort, LinkLayerRole role, int baud
     ll.baudRate = baudRate;
     ll.nRetransmissions = nRetransmissions;
     ll.timeout = timeout;
+    ll.packetSize=packetSize;
 
 }
 
@@ -132,7 +133,7 @@ int sendFile(const char* filename){
 
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
-                      int nTries, int timeout, const char *filename)
+                      int nTries, int timeout, const char *filename, int packetSize)
 {
     int fd = openSerialPort(serialPort, baudRate);
 
@@ -147,7 +148,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         exit(EXIT_FAILURE);
     }
 
-    createLinkLayer(fd, serialPort, llrole, baudRate, nTries, timeout);
+    createLinkLayer(fd, serialPort, llrole, baudRate, nTries, timeout, packetSize);
 
     llopen(ll.fdPort, ll);
 
@@ -246,7 +247,7 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         if (packetInfo.fileSize != fileSize) {
             printf("Start packet and end packet have different file size\n");
         }
-        printf("START CONTROL PACKET SUCCESS\n");
+        printf("END CONTROL PACKET SUCCESS\n");
     }
 
     
@@ -270,15 +271,16 @@ int receiveFile(const char* filename) {
 
     while (done==0) {
         llread(ll.fdPort, buffer); //para o buffer
-        
+    
         if (buffer[0] == CONTROL_BYTE_START) {
             readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }
 
         if (buffer[0] == CONTROL_BYTE_DATA) {
+           
             currentSequenceNumber = (int)(buffer[1]);
             if(lastSequenceNumber >= currentSequenceNumber && lastSequenceNumber != 254) {continue;}
-
+            
             processDataPacket(buffer);
             lastSequenceNumber = currentSequenceNumber;
         }

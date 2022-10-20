@@ -4,6 +4,7 @@
 #include "./include/application_layer.h"
 
 #define BAUDRATE 9600
+#define PACKETSIZE 1024
 #define N_TRIES 3
 #define TIMEOUT 4
 \
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
            TIMEOUT,
            filename);
 
-    applicationLayer(serialPort, role, BAUDRATE, N_TRIES, TIMEOUT, filename);
+    applicationLayer(serialPort, role, BAUDRATE, N_TRIES, TIMEOUT, filename, PACKETSIZE);
 
     return 0;
 }

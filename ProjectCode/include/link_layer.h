@@ -19,6 +19,7 @@ typedef struct
     int baudRate;
     int nRetransmissions;
     int timeout;
+    int packetSize;
 } LinkLayer;
 
 typedef struct 
