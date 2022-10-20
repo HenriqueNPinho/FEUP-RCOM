@@ -44,18 +44,18 @@ int readFileInformation(const char* fileName){
 
 int sendControlPacket(unsigned char controlByte){
     // flag start - flag nome - tamanho nome- nome - flag size- tamanho size- size - 
-    unsigned char packet[5 + sizeof(packetInfo.fileName)+  sizeof(packetInfo.fileSize)];
+    unsigned char packet[5 + strlen(packetInfo.fileName)+  sizeof(packetInfo.fileSize)];
     int pIndex=0;
 
     packet[pIndex++]=controlByte;
 
     packet[pIndex++]=FILE_NAME_BYTE;
 
-    
-    packet[pIndex++]= sizeof(packetInfo.fileName);
+    printf("size of: %ld \n filename: %s\n", strlen(packetInfo.fileName), packetInfo.fileName);
+    packet[pIndex++]= strlen(packetInfo.fileName);
    
 
-    for(int i = 0; i< sizeof(packetInfo.fileName);i++){
+    for(int i = 0; i< strlen(packetInfo.fileName);i++){
         packet[pIndex++]= packetInfo.fileName[i];
      
     }
