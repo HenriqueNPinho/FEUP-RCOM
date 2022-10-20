@@ -117,6 +117,7 @@ int sendDataPacket(){
 int sendFile(const char* filename){
     if(readFileInformation(filename)<0){
         printf("Could not read file information\n");
+        
         return -1;
     }
     if(sendControlPacket(CONTROL_BYTE_START)<0){
@@ -163,7 +164,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         break;
     case LlRx:
        // printf("sou o receiver\n");
-       receiveFile(filename);     
+       receiveFile(filename);  
+      
         break;
     default:
         break;
@@ -271,10 +273,10 @@ int receiveFile(const char* filename) {
     int done = 0;
     int lastSequenceNumber = -1;
     int currentSequenceNumber;
-
+ 
     while (done==0) {
         llread(ll.fdPort, buffer); //para o buffer
-    
+   
         if (buffer[0] == CONTROL_BYTE_START) {
             readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }

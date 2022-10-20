@@ -347,6 +347,7 @@ void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned c
 }
 
 int readTransmitterFrame(int fd, unsigned char* buffer) {
+   
     int pos;
     unsigned char byte;
     unsigned char controlByte;
@@ -355,12 +356,11 @@ int readTransmitterFrame(int fd, unsigned char* buffer) {
         if(read(fd,&byte,1)<0) {
             printf("erro no byte 'readtransmitterframe'\n");
         }
-
         SMInformationFrame(&state,byte,&controlByte);
         buffer[pos] = byte;
         pos++;
     }
-
+         
     return pos;
 }
 
@@ -394,6 +394,7 @@ int verifyFrame(unsigned char* frame, int length) {
 
 int llread(int fd,unsigned char *packet)
 {
+    
     int received = 0;
     int length = 0;
     unsigned char controlByte;
@@ -408,11 +409,10 @@ int llread(int fd,unsigned char *packet)
         if (length > 0) {
             unsigned char originalFrame[2*length+7];
 
-            originalFrame[0] = auxBuffer[0];
-            originalFrame[1] = auxBuffer[1];
-            originalFrame[2] = auxBuffer[2];
-            originalFrame[3] = auxBuffer[3];
-
+            for(size_t i=0; i<4; i++){
+                originalFrame[i]=auxBuffer[i];
+            }
+            
             int originalFrameIndex = 4;
             int escapeByteFound = FALSE;
 
@@ -430,7 +430,7 @@ int llread(int fd,unsigned char *packet)
                     originalFrame[originalFrameIndex++] = auxBuffer[i];
                 }
             }
-
+     
             originalFrame[originalFrameIndex] = auxBuffer[length-1];
             controlByte = originalFrame[2];
 
@@ -460,11 +460,11 @@ int llread(int fd,unsigned char *packet)
                 return 0;
 
             } else {
-
-                for (int i = 4; i < originalFrameIndex-1; i++) {
+                for (size_t i = 4; i < originalFrameIndex-1; i++) {
+                     
                     packet[packetIndex++] = originalFrame[i];
                 }
-
+               
                 if (controlByte == CONTROL_BYTE_0) {
                     unsigned char frame[5];
                     frame[0] = FLAG;
@@ -517,7 +517,7 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         }
         while (alarmCount<MAX_TRIES && alarmFlag);
 
-        if(!alarmFlag){
+        if(alarmFlag==0){
             printf("DISC received\n");
         }
 
@@ -540,6 +540,7 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         }
 
     } else if (ll.role == RECEIVER) {
+        
         readTransmitterResponse(fd);
         printf("DISC received\n");
 
@@ -552,12 +553,14 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         int res = write(fd, ctrlFrame, 5);
         printf("DISC Sent - %d bytes written\n", res);
         //readTransmitterResponse(fd); //se tirares isto o tx não acaba, se ficar terminam os 2 sem erros
-        //printf("Received UA\n"); se descomentares este print o receiver nao acaba,
+        //printf("Received UA\n");// se descomentares este print o receiver nao acaba,
         // se descomentares o sleep na linah 350, acaba o receiver mas o tx não
     }
 
     
-    
+     if (showStatistics == TRUE) {
+        printf("Statistics\n");
+    }
     tcflush(fd, TCIOFLUSH);
 
 	if (tcsetattr(fd, TCSANOW, &oldtio) == -1) {
@@ -567,9 +570,7 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
 
     close(fd);
 
-    if (showStatistics == TRUE) {
-        printf("Statistics\n");
-    }
+   
 
     return 0;
 }
