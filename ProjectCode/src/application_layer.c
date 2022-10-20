@@ -154,12 +154,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     switch (ll.role)
     {
     case LlTx:
-        printf("sou o transmitter\n");
-        sendFile(filename);
+        //printf("sou o transmitter\n");
+       sendFile(filename);
         break;
     case LlRx:
-        printf("sou o receiver\n");
-        receiveFile(filename);     
+       // printf("sou o receiver\n");
+       receiveFile(filename);     
         break;
     default:
         break;
@@ -206,18 +206,12 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         
         }
 
+        packetInfo.fileName = filename;
+        packetInfo.fileSize = fileSize;
 
-        if (strcmp(filename,fileNameReceived) == 0) {
-            packetInfo.fileName = fileNameReceived;
-            packetInfo.fileSize = fileSize;
-            packetInfo.fdFile = open(packetInfo.fileName,O_WRONLY | O_CREAT | O_APPEND, 0664);
-        } else {
-            printf("Error file name unknown at start...\n");
-            exit(EXIT_FAILURE);
-        }
-        
+        packetInfo.fdFile = open(filename,O_WRONLY | O_CREAT | O_APPEND, 0664);
 
-
+        printf("START CONTROL PACKET SUCCESS\n");
     } else if (controlByte== CONTROL_BYTE_END) {
 
         if (packet[packetIndex] == FILE_NAME_BYTE) {
@@ -247,12 +241,12 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         }
 
         if (strcmp(packetInfo.fileName,fileNameReceived) != 0) {
-            printf("Different file name at end...\n");
+            printf("Start packet and end packet have different file names \n");
         } 
         if (packetInfo.fileSize != fileSize) {
-            printf("Different file size at end...\n");
+            printf("Start packet and end packet have different file size\n");
         }
-
+        printf("START CONTROL PACKET SUCCESS\n");
     }
 
     

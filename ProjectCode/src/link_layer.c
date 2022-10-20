@@ -290,7 +290,7 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
     }
 
     if(alarmCount>=MAX_TRIES){
-        printf("Max tries exceeded");
+        printf("Max tries exceeded\n");
     }
 
    return nChars;
@@ -403,7 +403,7 @@ int llread(int fd,unsigned char *packet)
 
     while (received == 0) {
         length = readTransmitterFrame(fd,auxBuffer);
-        printf("frame received\n");
+        printf("frame received\n\n");
 
         if (length > 0) {
             unsigned char originalFrame[2*length+7];
