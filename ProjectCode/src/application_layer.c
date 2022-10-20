@@ -84,17 +84,20 @@ int sendControlPacket(unsigned char controlByte){
 int sendDataPacket(){
 
     int numPacketsSent = 0;
-    int numPacketsToSend = packetInfo.fileSize;       // numero máximo de de octetos num packet
-    unsigned char buffer[packetInfo.fileSize];
+    int numPacketsToSend = packetInfo.fileSize/ll.packetSize;       // numero máximo de de octetos num packet
+    unsigned char buffer[ll.packetSize];
     int bytesRead = 0;
     int length = 0;
-
+    
+    if(packetInfo.fileSize%ll.packetSize != 0){
+        numPacketsToSend++;
+    }
     while(numPacketsSent < numPacketsToSend){
 
-        if((bytesRead = read(packetInfo.fdFile,buffer,packetInfo.fileSize)) < 0){
+        if((bytesRead = read(packetInfo.fdFile,buffer,ll.packetSize)) < 0){
             printf("Error reading file\n");
         }
-        unsigned char packet[4+packetInfo.fileSize];
+        unsigned char packet[4+ll.packetSize];
         packet[0] = CONTROL_BYTE_DATA;
         packet[1] = numPacketsSent % 255;
         packet[2] = bytesRead / 256;
