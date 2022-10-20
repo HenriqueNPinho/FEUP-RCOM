@@ -264,7 +264,7 @@ int processDataPacket(unsigned char* buffer) {
 
 
 int receiveFile(const char* filename) {
-    unsigned char buffer[MAX_PAYLOAD_SIZE+4]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
+    unsigned char buffer[ll.packetSize +4]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
     int done = 0;
     int lastSequenceNumber = -1;
     int currentSequenceNumber;
