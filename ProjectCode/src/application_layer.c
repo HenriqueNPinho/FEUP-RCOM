@@ -52,7 +52,7 @@ int sendControlPacket(unsigned char controlByte){
 
     packet[pIndex++]=FILE_NAME_BYTE;
 
-    printf("size of: %ld \n filename: %s\n", strlen(packetInfo.fileName), packetInfo.fileName);
+    //printf("\nSize of: %ld \nFilename: %s\n\n", strlen(packetInfo.fileName), packetInfo.fileName);
     packet[pIndex++]= strlen(packetInfo.fileName);
    
 
@@ -117,17 +117,16 @@ int sendDataPacket(){
 int sendFile(const char* filename){
     if(readFileInformation(filename)<0){
         printf("Could not read file information\n");
-        
         return -1;
     }
     if(sendControlPacket(CONTROL_BYTE_START)<0){
         printf("Could not send start control packet\n");
         return -1;
     }  //start flag
-    if(sendDataPacket()<0){
+    /*if(sendDataPacket()<0){
           printf("Could not send data packet\n");
         return -1;
-    }   //send file
+    }*/  //send file
     if(sendControlPacket(CONTROL_BYTE_END)<0){
         printf("Could not send end control packet\n");
         return -1;
@@ -154,21 +153,27 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     createLinkLayer(fd, serialPort, llrole, baudRate, nTries, timeout, packetSize);
 
-    llopen(ll.fdPort, ll);
+    if(llopen(ll.fdPort, ll) < 0) {
+        exit(EXIT_FAILURE);
+    }
 
-    switch (ll.role)
-    {
-    case LlTx:
-        //printf("sou o transmitter\n");
-       sendFile(filename);
-        break;
-    case LlRx:
-       // printf("sou o receiver\n");
-       receiveFile(filename);  
-      
-        break;
-    default:
-        break;
+    switch (ll.role) {
+        case LlTx:
+            //printf("sou o transmitter\n");
+            if (sendFile(filename) < 0) {
+                printf("ERROR SENDING FILE");
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case LlRx:
+        // printf("sou o receiver\n");
+            if (receiveFile(filename) < 0) {
+                printf("ERROR SENDING FILE");
+                exit(EXIT_FAILURE);
+            }
+            break;
+        default:
+            break;
     }
 
     llclose(ll.fdPort,ll,0);   //////////so para passar na compilaçao
@@ -217,7 +222,7 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
 
         packetInfo.fdFile = open(filename,O_WRONLY | O_CREAT | O_APPEND, 0664);
 
-        printf("START CONTROL PACKET SUCCESS\n");
+        printf("START CONTROL PACKET SUCCESS\n\n");
     } else if (controlByte== CONTROL_BYTE_END) {
 
         if (packet[packetIndex] == FILE_NAME_BYTE) {
@@ -275,7 +280,9 @@ int receiveFile(const char* filename) {
     int currentSequenceNumber;
  
     while (done==0) {
-        llread(ll.fdPort, buffer); //para o buffer
+        if (llread(ll.fdPort, buffer)==0) {
+            continue;
+        } //para o buffer
    
         if (buffer[0] == CONTROL_BYTE_START) {
             readControlPacket(CONTROL_BYTE_START, buffer, filename);

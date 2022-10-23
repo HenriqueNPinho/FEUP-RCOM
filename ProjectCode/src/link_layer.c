@@ -14,7 +14,7 @@ void alarmHandler(int signal)
 {
     alarmFlag = 1;
     alarmCount++;
-    printf("Alarm #%d\n", alarmCount);
+    printf("-Time out: %d.\n", alarmCount);
 }
 void startAlarm(){
     
@@ -107,9 +107,9 @@ void readReceiverResponse(int fd){
     unsigned char b, controlb;
     enum state state=START;
     while(state!=STOP && alarmFlag==0){
-        if(read(fd,&b, 1)<0){
-            printf("error reading receiver response\n");
-        }    
+        if (read(fd,&b, 1)<0) {
+            printf("-Error reading receiver response.\n\n");
+        }
         SMresponse(&state, b, &controlb);
     }
 
@@ -121,11 +121,9 @@ void readTransmitterResponse(int fd){
     enum state state=START;
        
     while(state!=STOP){
-      
-        if(read(fd,&b, 1)<0){
-            perror("error reading transmitter response\n");
+        if (read(fd,&b, 1)<0) {
+            printf("-Error reading transmitter response.\n\n");
         }
-        
         SMresponse(&state, b, &controlb);
     }
 
@@ -133,7 +131,8 @@ void readTransmitterResponse(int fd){
 
 int llopen(int fd, LinkLayer connectionParameters)
 {
-       if(connectionParameters.role==TRANSMITTER){
+    printf("\n-----ESTABLISHING CONNECTION-----\n\n");
+    if (connectionParameters.role==TRANSMITTER) {
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
         ctrlFrame[1]=ADDRESS_FIELD;
@@ -143,24 +142,27 @@ int llopen(int fd, LinkLayer connectionParameters)
 
         do{
             write(fd, ctrlFrame, 5);
-            printf("SET Sent\n");
+            printf("-SET Sent.\n");
             alarmFlag= 0;
-            startAlarm();        
+            startAlarm();
             readReceiverResponse(fd);
             if(!alarmFlag)
-                printf("UA received\n");
-        }
-        while (alarmCount<MAX_TRIES && alarmFlag);
+                printf("-UA Received.\n");
+        } while (alarmCount<MAX_TRIES && alarmFlag);
         disableAlarm();
         
-        if(alarmCount>MAX_TRIES){
-            printf("max tries exceeded\n");
-            exit(-1);
+        if(alarmCount>=MAX_TRIES){
+            printf("-Max Tries Exceeded.\n");
+            printf("--Could not establish connection.\n");
+            printf("----------------------------------\n");
+            return(-1);
         }
-    }
-    else if(connectionParameters.role==RECEIVER){
+
+    } else if (connectionParameters.role==RECEIVER) {
+        //printf("1\n");
         readTransmitterResponse(fd);
-        printf("SET received\n");
+        //printf("2\n");
+        printf("-SET received.\n");
         
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
@@ -169,13 +171,15 @@ int llopen(int fd, LinkLayer connectionParameters)
         ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
         ctrlFrame[4]=FLAG;
         write(fd, ctrlFrame, 5);
-        printf("UA Sent\n");
+        printf("-UA Sent.\n");
 
+    } else {
+        printf("-Unknown flag.\n");
+        printf("--Could not establish connection.\n");
+        printf("----------------------------------\n");
+        return -1;
     }
-    else{
-    printf("Unknown flag\n");
-    exit(1);
-    } 
+    printf("\n-----CONNECTION ESTABLISHED-----\n\n");
     return 1;
 }
 
@@ -222,6 +226,7 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
 {  //FLAG - A- C - BCC1 - Data - BCC2 - FLAG
   //               a^c            
     int unsigned nChars = 0;
+    alarmCount = 0;
 
     do{
         unsigned char frame[2*bufSize+7]; //2* in case we need to stuff every byte
@@ -270,6 +275,7 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
         printf("A escrever \n");
         nChars = write(fd,frame,fIndex+1);
         printf("Sent frame with sequence number %d\n\n",ns);
+        printf("wrote %d bytes\n",nChars);
 
         startAlarm();
         unsigned char CtrlByte;
@@ -278,8 +284,7 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
         alarmFlag=1;  //tentar enviar outra vez se der erro
         }
         
-    }
-    while(alarmCount < MAX_TRIES && alarmFlag);
+    } while (alarmCount < MAX_TRIES && alarmFlag);
     disableAlarm();
 
     if(ns==0){
@@ -291,6 +296,7 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
 
     if(alarmCount>=MAX_TRIES){
         printf("Max tries exceeded\n");
+        return -1;
     }
 
    return nChars;
@@ -348,7 +354,7 @@ void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned c
 
 int readTransmitterFrame(int fd, unsigned char* buffer) {
    
-    int pos;
+    int pos=0;
     unsigned char byte;
     unsigned char controlByte;
     enum state state = START;
@@ -404,7 +410,7 @@ int llread(int fd,unsigned char *packet)
 
     while (received == 0) {
         length = readTransmitterFrame(fd,auxBuffer);
-        printf("frame received\n\n");
+        printf("frame received\n");
 
         if (length > 0) {
             unsigned char originalFrame[2*length+7];
@@ -499,6 +505,8 @@ int llread(int fd,unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int showStatistics"
 {
+    printf("\n-----CLOSING CONNECTION-----\n\n");
+
     if (ll.role == TRANSMITTER) {
         alarmCount = 0;
         unsigned char  ctrlFrame[5];
@@ -509,22 +517,24 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         ctrlFrame[4]=FLAG;
 
         do{
-            write(fd, ctrlFrame, 5);
-            printf("DISC Sent\n");
+            int res = write(fd, ctrlFrame, 5);
+            printf("-DISC Sent - %d bytes written.\n",res);
             alarmFlag = 0;
             startAlarm();        
             readReceiverResponse(fd);
-        }
-        while (alarmCount<MAX_TRIES && alarmFlag);
+            printf("estou a tentar receber a resposta do R\n");
+        } while (alarmCount<MAX_TRIES && alarmFlag);
 
-        if(alarmFlag==0){
-            printf("DISC received\n");
+        if (alarmFlag==0) {
+            printf("-DISC received.\n");
         }
 
         disableAlarm();
 
-        if(alarmCount>=MAX_TRIES){
-            printf("max tries exceeded\n");
+        if (alarmCount>=MAX_TRIES) {
+            printf("-Max tries exceeded.\n");
+            printf("--Could not close connection.\n");
+            printf("------------------------------\n");
             return -1;
         } else {
             unsigned char  ctrlFrame[5];
@@ -535,14 +545,15 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
             ctrlFrame[4]=FLAG;
 
             int res = write(fd, ctrlFrame, 5);
-            printf("Last UA Sent - %d bytes written\n", res);
+            printf("-Last UA Sent - %d bytes written\n", res);
             //sleep(-1);
         }
 
     } else if (ll.role == RECEIVER) {
         
         readTransmitterResponse(fd);
-        printf("DISC received\n");
+        printf("-DISC received.\n");
+
 
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
@@ -551,16 +562,14 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
         ctrlFrame[3]=ctrlFrame[1]^ctrlFrame[2];
         ctrlFrame[4]=FLAG;
         int res = write(fd, ctrlFrame, 5);
-        printf("DISC Sent - %d bytes written\n", res);
-        //readTransmitterResponse(fd); //se tirares isto o tx não acaba, se ficar terminam os 2 sem erros
-        //printf("Received UA\n");// se descomentares este print o receiver nao acaba,
-        // se descomentares o sleep na linah 350, acaba o receiver mas o tx não
+        printf("-DISC Sent - %d bytes written.\n", res);
     }
 
     
-     if (showStatistics == TRUE) {
+    if (showStatistics == TRUE) {
         printf("Statistics\n");
     }
+
     tcflush(fd, TCIOFLUSH);
 
 	if (tcsetattr(fd, TCSANOW, &oldtio) == -1) {
@@ -568,10 +577,11 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
 		exit(-1);
 	}
 
+    printf("-Estou no fim.\n");
     close(fd);
 
    
-
+    printf("\n-----CONNECTION CLOSED-----\n\n");
     return 0;
 }
 
