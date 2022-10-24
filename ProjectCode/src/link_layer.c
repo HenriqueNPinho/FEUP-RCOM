@@ -304,18 +304,22 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 
 void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned char* controlByte) {
+  
     switch(*currentState){
         case START:
+          
             if(byte == FLAG)    
                 *currentState = FLG_RCV;
             break;
         case FLG_RCV:
+      
             if(byte == ADDRESS_FIELD)   
                 *currentState = A_RCV;
             else if(byte != FLAG)
                 *currentState = START;
             break;
         case A_RCV:
+     
             if(byte == CONTROL_BYTE_0 || byte == CONTROL_BYTE_1){
               *currentState = C_RCV;
               *controlByte = byte;
@@ -328,6 +332,7 @@ void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned c
             }
             break;
         case C_RCV:
+    
             if(byte == (ADDRESS_FIELD^(*controlByte)))
               *currentState = BCC_OK;
             else if(byte == FLAG)
@@ -354,8 +359,10 @@ int readTransmitterFrame(int fd, unsigned char* buffer) {
     int pos=0;
     unsigned char byte;
     unsigned char controlByte;
-    enum state state = START;
+    enum st ate state = START;
+    
     while (state != STOP) {
+     
         if(read(fd,&byte,1)<0) {
             printf("erro no byte 'readtransmitterframe'\n");
         }
@@ -374,10 +381,9 @@ int verifyFrame(unsigned char* frame, int length) {
     unsigned char bcc1 = frame[3];
     unsigned char bcc2 = frame[length-2];
     unsigned char aux = 0x00;
-
     //verify if bcc1 is correct
     if (controlByte != CONTROL_BYTE_0 && controlByte != CONTROL_BYTE_1) {
-        printf("Error in the protocol! (bcc1)\n");
+        printf("Error in control byte\n");
         return -1;
     } else if(bcc1 == (addressField^controlByte)){
         //verify if bcc2 is correct
@@ -404,9 +410,10 @@ int llread(int fd,unsigned char *packet)
     unsigned char auxBuffer[131087];
     int packetIndex = 0;
     alarmCount = 0;
-
+     
     while (received == 0) {
         length = readTransmitterFrame(fd,auxBuffer);
+   
         printf("frame received\n");
 
         if (length > 0) {

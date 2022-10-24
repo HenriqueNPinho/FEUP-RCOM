@@ -279,7 +279,9 @@ int receiveFile(const char* filename) {
       /*  if (llread(ll.fdPort, buffer)==0) {
             continue;
         }*/ //para o buffer
+  
         llread(ll.fdPort, buffer);
+        
         if (buffer[0] == CONTROL_BYTE_START) {
             readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }

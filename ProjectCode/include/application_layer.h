@@ -3,6 +3,11 @@
 
 #ifndef _APPLICATION_LAYER_H_
 #define _APPLICATION_LAYER_H_
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
 #include "../include/link_layer.h"
 
 
