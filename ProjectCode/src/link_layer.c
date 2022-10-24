@@ -155,13 +155,11 @@ int llopen(int fd, LinkLayer connectionParameters)
             printf("-Max Tries Exceeded.\n");
             printf("--Could not establish connection.\n");
             printf("----------------------------------\n");
-            return(-1);
+            return -1;
         }
 
     } else if (connectionParameters.role==RECEIVER) {
-        //printf("1\n");
         readTransmitterResponse(fd);
-        //printf("2\n");
         printf("-SET received.\n");
         
         unsigned char  ctrlFrame[5];
@@ -180,7 +178,7 @@ int llopen(int fd, LinkLayer connectionParameters)
         return -1;
     }
     printf("\n-----CONNECTION ESTABLISHED-----\n\n");
-    return 1;
+    return 0;
 }
 
 ////////////////////////////////////////////////
@@ -272,7 +270,6 @@ int llwrite(int fd, const unsigned char *buf, int bufSize)
         }
         frame[fIndex]=FLAG;
 
-        printf("A escrever \n");
         nChars = write(fd,frame,fIndex+1);
         printf("Sent frame with sequence number %d\n\n",ns);
         printf("wrote %d bytes\n",nChars);
@@ -546,7 +543,7 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
 
             int res = write(fd, ctrlFrame, 5);
             printf("-Last UA Sent - %d bytes written\n", res);
-            //sleep(-1);
+            sleep(1);
         }
 
     } else if (ll.role == RECEIVER) {

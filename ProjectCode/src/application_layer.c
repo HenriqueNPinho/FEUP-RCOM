@@ -123,10 +123,10 @@ int sendFile(const char* filename){
         printf("Could not send start control packet\n");
         return -1;
     }  //start flag
-    /*if(sendDataPacket()<0){
+    if(sendDataPacket()<0){
           printf("Could not send data packet\n");
         return -1;
-    }*/  //send file
+    }//send file
     if(sendControlPacket(CONTROL_BYTE_END)<0){
         printf("Could not send end control packet\n");
         return -1;
@@ -153,24 +153,20 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     createLinkLayer(fd, serialPort, llrole, baudRate, nTries, timeout, packetSize);
 
-    if(llopen(ll.fdPort, ll) < 0) {
-        exit(EXIT_FAILURE);
-    }
+    llopen(ll.fdPort, ll);
+
 
     switch (ll.role) {
         case LlTx:
             //printf("sou o transmitter\n");
             if (sendFile(filename) < 0) {
-                printf("ERROR SENDING FILE");
-                exit(EXIT_FAILURE);
+                printf("\nERROR SENDING FILE\n");
             }
             break;
         case LlRx:
         // printf("sou o receiver\n");
-            if (receiveFile(filename) < 0) {
-                printf("ERROR SENDING FILE");
-                exit(EXIT_FAILURE);
-            }
+        receiveFile(filename);
+      
             break;
         default:
             break;
