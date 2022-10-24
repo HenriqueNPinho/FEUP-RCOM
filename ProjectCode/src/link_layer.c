@@ -528,7 +528,6 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
             alarmFlag = 0;
             startAlarm();        
             readReceiverResponse(fd);
-            printf("estou a tentar receber a resposta do R\n");
         } while (alarmCount<MAX_TRIES && alarmFlag);
 
         if (alarmFlag==0) {
@@ -583,7 +582,6 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
 		exit(-1);
 	}
 
-    printf("-Estou no fim.\n");
     close(fd);
 
    
