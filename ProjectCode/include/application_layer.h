@@ -30,12 +30,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 //  controlByte: control byte for START and END.
 //  packet: buffer to use.
 //  filename: file name to compare.
-int readControlPacket(unsigned char controlByte, unsigned char* packet, const char* filename);
+int readControlPacket(unsigned char controlByte, unsigned char* packet);
 
 int processDataPacket(unsigned char* buffer);
 // Arguments:
 //  fd: Connection Port.
 //  filename: file name for comparisons.
-int receiveFile(const char* filename);
+int receiveFile();
 
 #endif // _APPLICATION_LAYER_H_

@@ -164,8 +164,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             }
             break;
         case LlRx:
-        // printf("sou o receiver\n");
-        receiveFile(filename);
+
+        receiveFile();
       
             break;
         default:
@@ -177,11 +177,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 }
 
 
-int readControlPacket(unsigned char controlByte, unsigned char* packet, const char* filename){
+int readControlPacket(unsigned char controlByte, unsigned char* packet){
     int packetIndex = 1;
     int fileNameSize = 0;
     int fileSize = 0;
     char* fileNameReceived;
+
 
 
     if (controlByte == CONTROL_BYTE_START) {
@@ -213,12 +214,12 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         
         }
 
-        packetInfo.fileName = filename;
+        packetInfo.fileName = fileNameReceived;
         packetInfo.fileSize = fileSize;
 
-        packetInfo.fdFile = open(filename,O_WRONLY | O_CREAT | O_APPEND, 0664);
+        packetInfo.fdFile = open(fileNameReceived,O_WRONLY | O_CREAT | O_APPEND, 0664);
 
-        printf("START CONTROL PACKET SUCCESS\n\n");
+
     } else if (controlByte== CONTROL_BYTE_END) {
 
         if (packet[packetIndex] == FILE_NAME_BYTE) {
@@ -248,12 +249,13 @@ int readControlPacket(unsigned char controlByte, unsigned char* packet, const ch
         }
 
         if (strcmp(packetInfo.fileName,fileNameReceived) != 0) {
-            printf("Start packet and end packet have different file names \n");
+            printf("\n\nStart packet and end packet have different file names \n");
+            printf("\n %s %s \n", packetInfo.fileName, fileNameReceived);
         } 
         if (packetInfo.fileSize != fileSize) {
-            printf("Start packet and end packet have different file size\n");
+            printf("\n\nStart packet and end packet have different file size\n");
         }
-        printf("END CONTROL PACKET SUCCESS\n");
+    
     }
 
     
@@ -269,7 +271,7 @@ int processDataPacket(unsigned char* buffer) {
 }
 
 
-int receiveFile(const char* filename) {
+int receiveFile() {
     unsigned char buffer[ll.packetSize+4]; //como é que sabemos qual é o tamnaho do pacote para mandar? decidimos nos? 
     int done = 0;
     int lastSequenceNumber = -1;
@@ -283,7 +285,7 @@ int receiveFile(const char* filename) {
         llread(ll.fdPort, buffer);
         
         if (buffer[0] == CONTROL_BYTE_START) {
-            readControlPacket(CONTROL_BYTE_START, buffer, filename);
+            readControlPacket(CONTROL_BYTE_START, buffer);
         }
 
         if (buffer[0] == CONTROL_BYTE_DATA) {
@@ -296,7 +298,7 @@ int receiveFile(const char* filename) {
         }
 
         if (buffer[0] == CONTROL_BYTE_END) {
-            readControlPacket(CONTROL_BYTE_END, buffer, filename);
+            readControlPacket(CONTROL_BYTE_END, buffer);
             done = 1;
         }
     }
