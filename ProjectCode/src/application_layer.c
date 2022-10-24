@@ -56,7 +56,7 @@ int sendControlPacket(unsigned char controlByte){
     packet[pIndex++]= strlen(packetInfo.fileName);
    
 
-    for(int i = 0; i< strlen(packetInfo.fileName);i++){
+    for(size_t i = 0; i< strlen(packetInfo.fileName);i++){
         packet[pIndex++]= packetInfo.fileName[i];
      
     }
@@ -276,10 +276,10 @@ int receiveFile(const char* filename) {
     int currentSequenceNumber;
  
     while (done==0) {
-        if (llread(ll.fdPort, buffer)==0) {
+      /*  if (llread(ll.fdPort, buffer)==0) {
             continue;
-        } //para o buffer
-   
+        }*/ //para o buffer
+        llread(ll.fdPort, buffer);
         if (buffer[0] == CONTROL_BYTE_START) {
             readControlPacket(CONTROL_BYTE_START, buffer, filename);
         }
@@ -298,6 +298,6 @@ int receiveFile(const char* filename) {
             done = 1;
         }
     }
-
+    close(packetInfo.fdFile);
     return 0;
 }

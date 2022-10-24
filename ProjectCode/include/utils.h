@@ -18,6 +18,8 @@
 
 #define FLAG 0x7E
 #define ADDRESS_FIELD 0x03
+#define CONTROL_BYTE_0   0x00
+#define CONTROL_BYTE_1   0x40
 #define CONTROL_BYTE_SET 0x03
 #define CONTROL_BYTE_UA 0x07
 #define CONTROL_BYTE_DISC 0x0B
@@ -35,9 +37,6 @@
 #define FILE_SIZE_BYTE 0x00
 #define FILE_NAME_BYTE 0x01
 #define BYTE_MASK 0xFF
-
-#define CONTROL_BYTE_0   0x00
-#define CONTROL_BYTE_1   0x40
 
 #define ESC_BYTE 0x7D
 #define STUFFING_BYTE 0x20

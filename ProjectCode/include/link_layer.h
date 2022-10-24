@@ -38,14 +38,30 @@ typedef struct
 #define FALSE 0
 #define TRUE 1
 
+void alarmHandler(int signal);
+void startAlarm();
+void disableAlarm();
 
+int ControlByteCheck(unsigned char b);
+void SMresponse(enum state *currState, unsigned char b, unsigned char* controlb);
+void readReceiverResponse(int fd);
+void readTransmitterResponse(int fd);
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return "1" on success or "-1" on error.
 int llopen(int fd, LinkLayer connectionParameters);
 
+
+
+int readCtrlByte(int fd, unsigned char *CtrlB);
 // Send data in buf with size bufSize.
 // Return number of chars written, or "-1" on error.
 int llwrite(int fd, const unsigned char *buf, int bufSize);
+
+
+
+void SMInformationFrame(enum state* currentState, unsigned char byte, unsigned char* controlByte);
+int readTransmitterFrame(int fd, unsigned char* buffer);
+int verifyFrame(unsigned char* frame, int length);
 
 // Receive data in packet.
 // Return number of chars read, or "-1" on error.

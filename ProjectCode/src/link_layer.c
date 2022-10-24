@@ -505,7 +505,9 @@ int llclose(int fd, LinkLayer ll, int showStatistics) //Depois meter o "int show
     printf("\n-----CLOSING CONNECTION-----\n\n");
 
     if (ll.role == TRANSMITTER) {
-        alarmCount = 0;
+        if(alarmCount >= MAX_TRIES){
+            return -1;
+        }
         unsigned char  ctrlFrame[5];
         ctrlFrame[0]=FLAG;
         ctrlFrame[1]=ADDRESS_FIELD;
@@ -590,7 +592,7 @@ int openSerialPort(const char* port, int baudRate)
 {
   struct termios newtio;
   int fd;
-
+    printf("BAUD: %d\n", baudRate);
    fd=open(port,O_RDWR | O_NOCTTY);
     if (fd <0) {perror(port); exit(-1);}
 

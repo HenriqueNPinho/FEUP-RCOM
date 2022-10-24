@@ -9,6 +9,7 @@
 void createLinkLayer(int fd, const char* serialPort, LinkLayerRole role, int baudRate, int nRetransmissions, int timeout, int packetSize);
 int readFileInformation(const char* fileName);
 int sendControlPacket(unsigned char controlByte);
+int sendDataPacket();
 int sendFile(const char* filename);
 // Application layer main function.
 // Arguments:
