@@ -359,7 +359,7 @@ int readTransmitterFrame(int fd, unsigned char* buffer) {
     int pos=0;
     unsigned char byte;
     unsigned char controlByte;
-    enum st ate state = START;
+    enum state state = START;
     
     while (state != STOP) {
      
