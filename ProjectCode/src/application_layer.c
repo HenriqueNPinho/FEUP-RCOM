@@ -153,9 +153,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     createLinkLayer(fd, serialPort, llrole, baudRate, nTries, timeout, packetSize);
 
-    llopen(ll.fdPort, ll);
-
-
+    if (llopen(ll.fdPort, ll)<0) {
+        exit(-1);
+    }
+    
     switch (ll.role) {
         case LlTx:
             //printf("sou o transmitter\n");
@@ -172,7 +173,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             break;
     }
 
+    
     llclose(ll.fdPort,ll,0);   //////////so para passar na compilaçao
+   
+
+
+    
 
 }
 
